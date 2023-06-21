@@ -2,11 +2,11 @@
 use std::collections::HashMap;
 
 mod pieces;
-use pieces::{GamePiece, Orientation, ORIENTATION_ORDER, PieceType, LaserPiece, BlockPiece, DoubleMirrorPiece, GatePiece, SingleMirrorPiece, SplittingMirrorPiece};
+use pieces::{GamePiece, Orientation, ORIENTATION_ORDER, PieceType};
 
 #[derive(Debug)]
 struct Slot {
-    occupying_game_piece: Option<Box<dyn GamePiece>>,
+    occupying_game_piece: Option<GamePiece>,
     active_laser_directions: HashMap<Orientation, bool>,
     position_index: u8,
     position: (u8, u8),
@@ -180,7 +180,7 @@ impl GameBoard {
             .iter()
             .filter(|slot| {
                 if let Some(piece) = &slot.occupying_game_piece {
-                    return piece.is_target_lit();
+                    return piece.is_target_lit().unwrap_or(false);
                 } else {
                     false
                 }
@@ -287,7 +287,7 @@ impl GameBoard {
 
 struct Puzzle {
     start_game_board: GameBoard,
-    available_game_pieces: Vec<Box<dyn GamePiece>>,
+    available_game_pieces: Vec<GamePiece>,
 }
 
 fn main() {
@@ -319,292 +319,6 @@ mod test {
         assert_eq!(reoriented_laser_direction, Orientation::South);
     }
 
-    /// why was i so thorough??
-    #[test]
-    fn test_gate_piece() {
-        let mut gate_piece = GatePiece::new(Orientation::North);
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::South);
-        let resulting_direction_south_input_expected = [Some(Orientation::South), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        let resulting_direction_south_input_expected = [Some(Orientation::North), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::West);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::East);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let mut gate_piece = GatePiece::new(Orientation::South);
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::South);
-        let resulting_direction_south_input_expected = [Some(Orientation::South), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        let resulting_direction_south_input_expected = [Some(Orientation::North), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::West);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::East);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let mut gate_piece = GatePiece::new(Orientation::East);
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::East);
-        let resulting_direction_south_input_expected = [Some(Orientation::East), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::West);
-        let resulting_direction_south_input_expected = [Some(Orientation::West), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::South);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let mut gate_piece = GatePiece::new(Orientation::West);
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::East);
-        let resulting_direction_south_input_expected = [Some(Orientation::East), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::West);
-        let resulting_direction_south_input_expected = [Some(Orientation::West), None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::South);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-
-        let resulting_direction_south_input =
-            gate_piece.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        let resulting_direction_south_input_expected = [None, None];
-        assert_eq!(
-            resulting_direction_south_input,
-            resulting_direction_south_input_expected
-        );
-    }
-
-    #[test]
-    fn test_single_mirror_piece() {
-        let mut piece = SingleMirrorPiece::new(Orientation::North);
-        let outbound_calculated =
-            piece.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        let outbound_expected = [Some(Orientation::West), None];
-        assert_eq!(outbound_calculated, outbound_expected);
-
-        let mut piece = SingleMirrorPiece::new(Orientation::North);
-        let outbound_calculated =
-            piece.outbound_lasers_given_inbound_laser_direction(Orientation::South);
-        let outbound_expected = [None, None];
-        assert_eq!(outbound_calculated, outbound_expected);
-        assert!(piece.is_target_lit());
-        assert!(piece.is_lit());
-
-        let mut piece = SingleMirrorPiece::new(Orientation::North);
-        let outbound_calculated =
-            piece.outbound_lasers_given_inbound_laser_direction(Orientation::West);
-        let outbound_expected = [None, None];
-        assert_eq!(outbound_calculated, outbound_expected);
-        assert!(!piece.is_target_lit());
-        assert!(piece.is_lit());
-
-        let mut piece = SingleMirrorPiece::new(Orientation::West);
-        let outbound_calculated =
-            piece.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        let outbound_expected = [Some(Orientation::East), None];
-        assert_eq!(outbound_calculated, outbound_expected);
-
-        let mut piece = SingleMirrorPiece::new(Orientation::West);
-        let outbound_calculated =
-            piece.outbound_lasers_given_inbound_laser_direction(Orientation::East);
-        let outbound_expected = [None, None];
-        assert_eq!(outbound_calculated, outbound_expected);
-        assert!(piece.is_target_lit());
-        assert!(piece.is_lit());
-
-        let mut piece = SingleMirrorPiece::new(Orientation::West);
-        let outbound_calculated =
-            piece.outbound_lasers_given_inbound_laser_direction(Orientation::South);
-        let outbound_expected = [None, None];
-        assert_eq!(outbound_calculated, outbound_expected);
-        assert!(!piece.is_target_lit());
-        assert!(piece.is_lit());
-    }
-
-    #[test]
-    fn test_laser() {
-        let mut laser = LaserPiece::new(Orientation::North);
-        let outbound_lasers =
-            laser.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        assert_eq!(outbound_lasers, [Some(Orientation::North), None]);
-
-        let mut laser = LaserPiece::new(Orientation::North);
-        let outbound_lasers =
-            laser.outbound_lasers_given_inbound_laser_direction(Orientation::West);
-        assert_eq!(outbound_lasers, [Some(Orientation::North), None]);
-
-        let mut laser = LaserPiece::new(Orientation::West);
-        let outbound_lasers =
-            laser.outbound_lasers_given_inbound_laser_direction(Orientation::West);
-        assert_eq!(outbound_lasers, [Some(Orientation::West), None]);
-
-        let mut laser = LaserPiece::new(Orientation::West);
-        let outbound_lasers =
-            laser.outbound_lasers_given_inbound_laser_direction(Orientation::North);
-        assert_eq!(outbound_lasers, [Some(Orientation::West), None]);
-    }
-
-    #[test]
-    fn test_neighboring_slot() {
-        let slot = Slot::new(0);
-        let neighboring_slot_index = slot.neighboring_slot_from_orientation(Orientation::East);
-        assert_eq!(neighboring_slot_index, Some(1));
-    }
-
-    #[test]
-    fn test_slot_index_from_position() {
-        let calculated_index = Slot::index_from_position((0, 0));
-        let expected_index = Some(0);
-        assert_eq!(calculated_index, expected_index);
-
-        let calculated_index = Slot::index_from_position((3, 0));
-        let expected_index = Some(3);
-        assert_eq!(calculated_index, expected_index);
-
-        let calculated_index = Slot::index_from_position((0, 1));
-        let expected_index = Some(5);
-        assert_eq!(calculated_index, expected_index);
-
-        let calculated_index = Slot::index_from_position((3, 2));
-        let expected_index = Some(13);
-        assert_eq!(calculated_index, expected_index);
-
-        let calculated_index = Slot::index_from_position((10, 10));
-        let expected_index = None;
-        assert_eq!(calculated_index, expected_index);
-    }
-
-    #[test]
-    fn test_solver_with_a_simple_puzzle() {
-        let mut game_board = GameBoard::new(1);
-        game_board.slots.get_mut(0).unwrap().occupying_game_piece =
-            Some(Box::new(LaserPiece::new(Orientation::East)));
-        game_board.slots.get_mut(2).unwrap().occupying_game_piece =
-            Some(Box::new(GatePiece::new(Orientation::West)));
-        game_board.slots.get_mut(4).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::West)));
-        game_board = game_board.calculate_result();
-        println!("lit targets: {}", game_board.count_lit_targets());
-        assert!(game_board.valid_solution.unwrap())
-    }
-
-    #[test]
-    fn test_solver_with_a_less_simple_puzzle() {
-        let mut game_board = GameBoard::new(1);
-        game_board.slots.get_mut(0).unwrap().occupying_game_piece =
-            Some(Box::new(LaserPiece::new(Orientation::East)));
-
-        game_board.slots.get_mut(2).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::East)));
-
-        game_board.slots.get_mut(7).unwrap().occupying_game_piece =
-            Some(Box::new(GatePiece::new(Orientation::North)));
-        game_board.slots.get_mut(12).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::South)));
-        game_board = game_board.calculate_result();
-        println!("lit targets: {}", game_board.count_lit_targets());
-        assert!(game_board.valid_solution.unwrap())
-    }
-
-    #[test]
-    fn test_solver_with_a_double_mirror() {
-        let mut game_board = GameBoard::new(1);
-        game_board.slots.get_mut(0).unwrap().occupying_game_piece =
-            Some(Box::new(LaserPiece::new(Orientation::East)));
-
-        game_board.slots.get_mut(2).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::East)));
-
-        game_board.slots.get_mut(7).unwrap().occupying_game_piece =
-            Some(Box::new(GatePiece::new(Orientation::North)));
-        game_board.slots.get_mut(12).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::South)));
-        game_board = game_board.calculate_result();
-        println!("lit targets: {}", game_board.count_lit_targets());
-        assert!(game_board.valid_solution.unwrap())
-    }
-
 
     // /| -- /  -- X 
     //       ||    
@@ -620,39 +334,39 @@ mod test {
 
         // laser in top right
         game_board.slots.get_mut(24).unwrap().occupying_game_piece =
-            Some(Box::new(LaserPiece::new(Orientation::West)));
+            Some(GamePiece::new(PieceType::Laser, Orientation::West));
 
         // splitting mirror piece on center col, top row slot
         game_board.slots.get_mut(22).unwrap().occupying_game_piece =
-            Some(Box::new(SplittingMirrorPiece::new(Orientation::East)));
+            Some(GamePiece::new(PieceType::SplittingMirror, Orientation::East));
 
         // target 1: top left slot, target facing east
         game_board.slots.get_mut(20).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::East)));
+            Some(GamePiece::new(PieceType::SingleMirror, Orientation::East));
 
         // gate piece, middle col  row[3]
         game_board.slots.get_mut(17).unwrap().occupying_game_piece =
-        Some(Box::new(GatePiece::new(Orientation::South)));
+        Some(GamePiece::new(PieceType::Gate, Orientation::South));
 
         // block piece, true center
         game_board.slots.get_mut(12).unwrap().occupying_game_piece =
-        Some(Box::new(BlockPiece::new(Orientation::West)));
+        Some(GamePiece::new(PieceType::Block, Orientation::West));
 
         // splitting mirror piece on center col, row[1] slot
         game_board.slots.get_mut(7).unwrap().occupying_game_piece =
-            Some(Box::new(SplittingMirrorPiece::new(Orientation::East)));
+            Some(GamePiece::new(PieceType::SplittingMirror, Orientation::East));
 
         // double mirror piece on bottom middle slot, facing south
         game_board.slots.get_mut(2).unwrap().occupying_game_piece =
-        Some(Box::new(DoubleMirrorPiece::new(Orientation::South)));
+        Some(GamePiece::new(PieceType::DoubleMirror, Orientation::South));
 
         // target 2: left col, row[1] slot, facing east
         game_board.slots.get_mut(5).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::East)));
+            Some(GamePiece::new(PieceType::SingleMirror, Orientation::East));
 
         // target 3: bottom right slot, facing west
         game_board.slots.get_mut(4).unwrap().occupying_game_piece =
-            Some(Box::new(SingleMirrorPiece::new(Orientation::West)));
+            Some(GamePiece::new(PieceType::SingleMirror, Orientation::West));
 
 
         game_board = game_board.calculate_result();

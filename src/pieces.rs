@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
+use std::fmt;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum PieceType {
     Laser,
     SingleMirror,
@@ -9,23 +10,48 @@ pub enum PieceType {
     Block,
     SplittingMirror,
 }
-use std::fmt;
 
-pub trait GamePiece: fmt::Debug {
-    fn new(orientation: Orientation) -> Self
-    where
-        Self: Sized;
-    fn get_orientation(&self) -> Orientation;
-    fn get_piece_type(&self) -> PieceType;
-    /// this method should also update `lit` and `target_lit`
-    fn reference_outbound_lasers_given_inbound_laser_direction(
-        &mut self,
-        laser_inbound_orientation: Orientation,
-    ) -> [Option<Orientation>; 2];
-    fn is_lit(&self) -> bool;
-    fn is_target_lit(&self) -> bool;
+#[derive(Debug, Clone)]
+pub struct GamePiece {
+    piece_type: PieceType,
+    lit: Option<bool>,
+    target_lit: Option<bool>,
+    orientation: Orientation,
+}
 
-    fn outbound_lasers_given_inbound_laser_direction(
+impl GamePiece {
+    pub fn new(piece_type: PieceType, orientation: Orientation) -> Self {
+        let (lit, target_lit) = match piece_type {
+            PieceType::Laser => (Some(true), None),
+            PieceType::SingleMirror => (Some(false), Some(false)),
+            PieceType::Gate => (None, None),
+            _ => (Some(false), None),
+        };
+        Self {
+            piece_type,
+            lit,
+            target_lit,
+            orientation,
+        }
+    }
+
+    pub fn get_orientation(&self) -> Orientation {
+        self.orientation.clone()
+    }
+
+    pub fn get_piece_type(&self) -> PieceType {
+        self.piece_type.clone()
+    }
+
+    pub fn is_lit(&self) -> Option<bool> {
+        self.lit
+    }
+
+    pub fn is_target_lit(&self) -> Option<bool> {
+        self.target_lit
+    }
+
+    pub fn outbound_lasers_given_inbound_laser_direction(
         &mut self,
         laser_inbound_orientation: Orientation,
     ) -> [Option<Orientation>; 2] {
@@ -48,230 +74,67 @@ pub trait GamePiece: fmt::Debug {
             _ => outbound_lasers,
         }
     }
-}
-
-/// the red piece
-/// reference orientation is laser facing north
-#[derive(Debug)]
-pub struct LaserPiece {
-    orientation: Orientation,
-}
-
-impl GamePiece for LaserPiece {
-    fn new(orientation: Orientation) -> Self {
-        Self { orientation }
-    }
-
-    fn get_orientation(&self) -> Orientation {
-        self.orientation.clone()
-    }
-
-    fn get_piece_type(&self) -> PieceType {
-        PieceType::Laser
-    }
-
-    /// this will be used to kick start the maze; we'll start the puzzle from the laser piece,
-    /// and the next laser follows the laser piece's orientation. if the beam loops back and hits
-    /// the laser piece, it will yield the same direction again, which the game board will know
-    /// the laser is already over that slot in that direction, and stop tracing that laser's
-    /// path
-    fn reference_outbound_lasers_given_inbound_laser_direction(
-        &mut self,
-        laser_inbound_orientation: Orientation,
-    ) -> [Option<Orientation>; 2] {
-        match laser_inbound_orientation {
-            _ => [Some(Orientation::North), None],
-        }
-    }
-
-    fn is_target_lit(&self) -> bool {
-        false
-    }
-
-    fn is_lit(&self) -> bool {
-        true
-    }
-}
-
-#[derive(Debug)]
-pub struct GatePiece {
-    orientation: Orientation,
-    lit: bool,
-}
-
-/// the yellow piece
-/// reference orientation is with the transmissive direction N/S
-impl GamePiece for GatePiece {
-    fn new(orientation: Orientation) -> Self {
-        Self {
-            orientation,
-            lit: false,
-        }
-    }
-
-    fn get_orientation(&self) -> Orientation {
-        self.orientation.clone()
-    }
-
-    fn get_piece_type(&self) -> PieceType {
-        PieceType::Gate
-    }
-
-    fn is_lit(&self) -> bool {
-        self.lit
-    }
 
     fn reference_outbound_lasers_given_inbound_laser_direction(
         &mut self,
         laser_inbound_orientation: Orientation,
     ) -> [Option<Orientation>; 2] {
-        self.lit = true;
-        match laser_inbound_orientation {
-            Orientation::North | Orientation::South => [Some(laser_inbound_orientation), None],
-            Orientation::West | Orientation::East => [None, None],
-        }
-    }
-
-    fn is_target_lit(&self) -> bool {
-        false
-    }
-}
-
-/// The purple piece
-/// the reference position is with the target facing north
-/// this means the mirror has this orientation: \|
-#[derive(Debug)]
-pub struct SingleMirrorPiece {
-    orientation: Orientation,
-    lit: bool,
-    target_lit: bool,
-}
-
-impl GamePiece for SingleMirrorPiece {
-    fn new(orientation: Orientation) -> Self {
-        Self {
-            orientation,
-            lit: false,
-            target_lit: false,
-        }
-    }
-
-    fn get_orientation(&self) -> Orientation {
-        self.orientation.clone()
-    }
-
-    fn get_piece_type(&self) -> PieceType {
-        PieceType::SingleMirror
-    }
-
-    fn reference_outbound_lasers_given_inbound_laser_direction(
-        &mut self,
-        laser_inbound_orientation: Orientation,
-    ) -> [Option<Orientation>; 2] {
-        self.lit = true;
-        match laser_inbound_orientation {
-            Orientation::North => [Some(Orientation::West), None],
-            Orientation::West => [None, None],
-            Orientation::South => {
-                if !self.target_lit {
-                    self.target_lit = true;
-                    println!("Hit a target!");
+        match self.piece_type {
+            PieceType::Laser => {
+                match laser_inbound_orientation {
+                    _ => [Some(Orientation::North), None],
                 }
-                [None, None]
             }
-            Orientation::East => [Some(Orientation::South), None],
+            
+            PieceType::Gate => {
+                self.lit = Some(true);
+                match laser_inbound_orientation {
+                    Orientation::North | Orientation::South => [Some(laser_inbound_orientation), None],
+                    Orientation::West | Orientation::East => [None, None],
+                }
+            }
+            
+            PieceType::SingleMirror => {
+                self.lit = Some(true);
+                match laser_inbound_orientation {
+                    Orientation::North => [Some(Orientation::West), None],
+                    Orientation::West => [None, None],
+                    Orientation::South => {
+                        self.target_lit = Some(true);
+                        [None, None]
+                    }
+                    Orientation::East => [Some(Orientation::South), None],
+                }
+            }
+            
+            PieceType::DoubleMirror => {
+                self.lit = Some(true);
+                match laser_inbound_orientation {
+                    Orientation::North => [Some(Orientation::West), None],
+                    Orientation::West => [Some(Orientation::North), None],
+                    Orientation::South => [Some(Orientation::East), None],
+                    Orientation::East => [Some(Orientation::South), None],
+                }
+            }
+            
+            PieceType::Block => {
+                [Some(laser_inbound_orientation), None]
+            }
+            
+            PieceType::SplittingMirror => {
+                self.lit = Some(true);
+                match laser_inbound_orientation {
+                    // this piece is the only one to return two beams
+                    // in this match statement, the item[0] acts just like the blue double mirror piece
+                    // while item[1] is the transmitted beam
+                    Orientation::North => [Some(Orientation::West), Some(laser_inbound_orientation)],
+                    Orientation::West => [Some(Orientation::North), Some(laser_inbound_orientation)],
+                    Orientation::South => [Some(Orientation::East), Some(laser_inbound_orientation)],
+                    Orientation::East => [Some(Orientation::South), Some(laser_inbound_orientation)],
+                }
+            }
+            
         }
-    }
-
-    fn is_lit(&self) -> bool {
-        self.lit
-    }
-
-    fn is_target_lit(&self) -> bool {
-        self.target_lit
-    }
-}
-
-/// The blue piece
-/// the reference position is the mirror oriented like \
-#[derive(Debug)]
-pub struct DoubleMirrorPiece {
-    orientation: Orientation,
-    lit: bool,
-}
-
-impl GamePiece for DoubleMirrorPiece {
-    fn new(orientation: Orientation) -> Self {
-        Self {
-            orientation,
-            lit: false,
-        }
-    }
-
-    fn get_orientation(&self) -> Orientation {
-        self.orientation.clone()
-    }
-
-    fn get_piece_type(&self) -> PieceType {
-        PieceType::DoubleMirror
-    }
-
-    fn reference_outbound_lasers_given_inbound_laser_direction(
-        &mut self,
-        laser_inbound_orientation: Orientation,
-    ) -> [Option<Orientation>; 2] {
-        self.lit = true;
-        match laser_inbound_orientation {
-            Orientation::North => [Some(Orientation::West), None],
-            Orientation::West => [Some(Orientation::North), None],
-            Orientation::South => [Some(Orientation::East), None],
-            Orientation::East => [Some(Orientation::South), None],
-        }
-    }
-
-    fn is_lit(&self) -> bool {
-        self.lit
-    }
-
-    fn is_target_lit(&self) -> bool {
-        false
-    }
-}
-
-/// The black piece
-#[derive(Debug)]
-pub struct BlockPiece {
-    orientation: Orientation,
-}
-
-impl GamePiece for BlockPiece {
-    fn new(orientation: Orientation) -> Self {
-        Self {
-            orientation,
-        }
-    }
-
-    fn get_orientation(&self) -> Orientation {
-        self.orientation.clone()
-    }
-
-    fn get_piece_type(&self) -> PieceType {
-        PieceType::Block
-    }
-
-    fn reference_outbound_lasers_given_inbound_laser_direction(  // TODO
-        &mut self,
-        laser_inbound_orientation: Orientation,
-    ) -> [Option<Orientation>; 2] {
-        [Some(laser_inbound_orientation), None]
-    }
-
-    fn is_lit(&self) -> bool {  // TODO
-        true
-    }
-
-    fn is_target_lit(&self) -> bool {  // TODO
-        false
     }
 }
 
@@ -315,55 +178,6 @@ impl Orientation {
             Self::South => 2,
             Self::West => 3,
         }
-    }
-}
-
-/// The green piece
-/// the reference position is the mirror oriented like \
-#[derive(Debug)]
-pub struct SplittingMirrorPiece {
-    orientation: Orientation,
-    lit: bool,
-}
-
-impl GamePiece for SplittingMirrorPiece {
-    fn new(orientation: Orientation) -> Self {
-        Self {
-            orientation,
-            lit: false,
-        }
-    }
-
-    fn get_orientation(&self) -> Orientation {
-        self.orientation.clone()
-    }
-
-    fn get_piece_type(&self) -> PieceType {
-        PieceType::SplittingMirror
-    }
-
-    fn reference_outbound_lasers_given_inbound_laser_direction(
-        &mut self,
-        laser_inbound_orientation: Orientation,
-    ) -> [Option<Orientation>; 2] {
-        self.lit = true;
-        match laser_inbound_orientation {
-            // this piece is the only one to return two beams
-            // in this match statement, the item[0] acts just like the blue double mirror piece
-            // while item[1] is the transmitted beam
-            Orientation::North => [Some(Orientation::West), Some(laser_inbound_orientation)],
-            Orientation::West => [Some(Orientation::North), Some(laser_inbound_orientation)],
-            Orientation::South => [Some(Orientation::East), Some(laser_inbound_orientation)],
-            Orientation::East => [Some(Orientation::South), Some(laser_inbound_orientation)],
-        }
-    }
-
-    fn is_lit(&self) -> bool {
-        self.lit
-    }
-
-    fn is_target_lit(&self) -> bool {
-        false
     }
 }
 
