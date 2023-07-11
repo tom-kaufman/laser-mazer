@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use std::fmt;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(PartialEq, Debug, Clone, Hash, Eq)]
 pub enum PieceType {
     Laser,
     SingleMirror,

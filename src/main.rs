@@ -121,6 +121,7 @@ impl GameBoard {
         };
 
         // make sure one piece is a laser
+        // also sets the initial laser
         if self
             .slots
             .iter_mut()
@@ -153,25 +154,7 @@ impl GameBoard {
             return false;
         }
 
-        // make sure one piece is a purple target piece
-        if !(self.slots.iter().any(|slot| {
-            if let Some(piece) = &slot.occupying_game_piece {
-                piece.get_piece_type() == PieceType::SingleMirror
-            } else {
-                false
-            }
-        })) {
-            false
-        } else {
-            true
-        }
-
-        // TODO
-        // count purple pieces <= 5
-        // count yellow pieces <= 1
-        // count green pieces <= 2
-        // count black piece <= 1
-        // check blue piece <= 1
+        true
     }
 
     fn has_active_lasers(&self) -> bool {
@@ -308,6 +291,50 @@ impl Puzzle {
 
     fn check_solution(&mut self) {
         // TODO
+    }
+
+    // make sure the number of pieces is a valid puzzle
+    fn check_setup(&self) -> bool {
+        let mut pieces: HashMap<PieceType, u8> = HashMap::new();
+        for slot in &self.start_game_board.slots {
+            if let Some(piece) = &slot.occupying_game_piece {
+                pieces
+                    .entry(piece.get_piece_type())
+                    .and_modify(|counter| *counter += 1)
+                    .or_insert(1);
+            }
+        }
+        for piece in &self.available_game_pieces {
+            pieces
+                .entry(piece.get_piece_type())
+                .and_modify(|counter| *counter += 1)
+                .or_insert(1);
+        }
+
+        if !pieces.contains_key(&PieceType::Laser) {
+            return false;
+        }
+        if !pieces.contains_key(&PieceType::SingleMirror) {
+            return false;
+        }
+
+        for (piece_type, count) in pieces {
+            let (min_count, max_count) = match piece_type {
+                PieceType::Block => (0, 1),
+                PieceType::Gate => (0, 1),
+                PieceType::DoubleMirror => (0, 1),
+                PieceType::Laser => (1, 1),
+                PieceType::SingleMirror => (1, 5),
+                PieceType::SplittingMirror => (1, 2),
+            };
+            if (count < min_count) || (count > max_count) {
+                return false;
+            }
+        }
+
+        // TODO check "must lit" vs number of splitting mirrors
+
+        true
     }
 }
 
