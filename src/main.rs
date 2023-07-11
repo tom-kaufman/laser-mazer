@@ -283,17 +283,13 @@ struct Puzzle {
 }
 
 impl Puzzle {
-    fn wipe_board(mut self) -> Self {
-        // TODO
-        // move all non-starting pieces off the board back to the available game pieces
-        self
-    }
-
-    fn check_solution(&mut self) {
-        // TODO
+    fn check_solution(self) -> bool {
+        // assumes we've already checked the setup
+        self.start_game_board.calculate_result().valid_solution.unwrap_or_else(|| false)
     }
 
     // make sure the number of pieces is a valid puzzle
+    // only run this one time!
     fn check_setup(&self) -> bool {
         let mut pieces: HashMap<PieceType, u8> = HashMap::new();
         for slot in &self.start_game_board.slots {
