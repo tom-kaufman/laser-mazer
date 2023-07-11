@@ -113,11 +113,11 @@ impl GameBoard {
         }
     }
 
-    fn check_setup(&mut self) {
+    fn check_setup(&mut self) -> bool {
         // if the game board has already taken turns we can't trust several assumptions
         // used later in this method
         if self.turns > 0 {
-            panic!();
+            return false;
         };
 
         // make sure one piece is a laser
@@ -146,7 +146,7 @@ impl GameBoard {
             .sum::<u8>()
             != 1
         {
-            panic!();
+            return false;
         }
 
         // make sure one piece is a purple target piece
@@ -157,7 +157,9 @@ impl GameBoard {
                 false
             }
         })) {
-            panic!();
+            false
+        } else {
+            true
         }
 
         // TODO
@@ -240,7 +242,11 @@ impl GameBoard {
     }
 
     fn calculate_result(mut self) -> Self {
-        self.check_setup();
+        if !self.check_setup() {
+            self.valid_solution = None;
+            return self
+        }
+        
         println!("has active lasers? {}", self.has_active_lasers());
         while self.has_active_lasers() {
             //println!("TURN {}\n\n{:?}\n\n", self.turns, self);
