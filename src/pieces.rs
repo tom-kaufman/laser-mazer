@@ -14,14 +14,18 @@ pub enum PieceType {
 #[derive(Debug, Clone)]
 pub struct GamePiece {
     piece_type: PieceType,
-    orientation: Orientation,
+    orientation: Option<Orientation>,
     lit: Option<bool>,
     target_lit: Option<bool>,
     starting_piece: bool,
 }
 
 impl GamePiece {
-    pub fn new(piece_type: PieceType, orientation: Orientation, starting_piece: bool) -> Self {
+    pub fn new(
+        piece_type: PieceType,
+        orientation: Option<Orientation>,
+        starting_piece: bool,
+    ) -> Self {
         let (lit, target_lit) = match piece_type {
             PieceType::Laser => (Some(true), None),
             PieceType::SingleMirror => (Some(false), Some(false)),
@@ -37,7 +41,7 @@ impl GamePiece {
         }
     }
 
-    pub fn get_orientation(&self) -> Orientation {
+    pub fn get_orientation(&self) -> Option<Orientation> {
         self.orientation.clone()
     }
 
@@ -63,6 +67,7 @@ impl GamePiece {
     ) -> [Option<Orientation>; 2] {
         let reoriented_direction = self
             .get_orientation()
+            .expect("method shouldn't be called if all orientations are not set")
             .reorientate_inbound_laser(laser_inbound_orientation.clone());
         let reoriented_outbound_lasers =
             self.reference_outbound_lasers_given_inbound_laser_direction(reoriented_direction);
@@ -71,6 +76,7 @@ impl GamePiece {
             if let Some(outbound_laser) = reoriented_outbound_lasers[i] {
                 outbound_lasers[i] = Some(
                     self.get_orientation()
+                        .expect("method shouldn't be called if all orientations are not set")
                         .reorientate_outbound_laser(outbound_laser),
                 );
             }
