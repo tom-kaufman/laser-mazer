@@ -2,9 +2,7 @@
 - 12 game pieces; any # from 2-12 pieces may be included; actual # pieces in puzzle = `N`
 - 25 slots, all `N` pieces must be placed -> `25! / (25 - N)!`
 - each piece may have 4 rotations, for N pieces, there are `4^N` rotation configurations
-- so, `summation on [2, 12] { 4^N * 25! / (25 - N!) }` yields 2,681,526,361,893,600
-## How many configurations?
-- 4 rotations available per piece (ignoring redundant configurations since all pieces but laser and purple piece have symmetries) -> 4 * 2,681,526,361,893,600 = 1.7020058938688047e+23
+- so, `summation on [2, 12] { 4^N * 25! / (25 - N)! }` yields 4.255014734672012e+22
 
 
 # Thoughts on a solving algorithm
@@ -31,10 +29,10 @@
 
 
 # TODO
-- [ ] Implement remaining pieces
-    - [ ] Blue double sided mirror
-    - [ ] Green splitting mirror
-    - [ ] Black blocking piece
+- [X] Implement remaining pieces
+    - [X] Blue double sided mirror
+    - [X] Green splitting mirror
+    - [X] Black blocking piece
 - `Puzzle`
     - [ ] Construct a puzzle from a json
     - [ ] Validate that the `Puzzle` meets the constraints of the game (max # of each type of piece)

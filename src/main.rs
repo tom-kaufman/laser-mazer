@@ -1,8 +1,7 @@
-
 use std::collections::HashMap;
 
 mod pieces;
-use pieces::{GamePiece, Orientation, ORIENTATION_ORDER, PieceType};
+use pieces::{GamePiece, Orientation, PieceType, ORIENTATION_ORDER};
 
 #[derive(Debug)]
 struct Slot {
@@ -290,6 +289,18 @@ struct Puzzle {
     available_game_pieces: Vec<GamePiece>,
 }
 
+impl Puzzle {
+    fn wipe_board(mut self) -> Self {
+        // TODO
+        // move all non-starting pieces off the board back to the available game pieces
+        self
+    }
+
+    fn check_solution(&mut self) {
+        // TODO
+    }
+}
+
 fn main() {
     println!("Hello, world!");
 }
@@ -319,55 +330,68 @@ mod test {
         assert_eq!(reoriented_laser_direction, Orientation::South);
     }
 
-
-    // /| -- /  -- X 
-    //       ||    
+    // /| -- /  -- X
+    //       ||
     //       []
-    // /| -- /  
+    // /| -- /
     //       \\ -- |/
     #[test]
     fn test_solver_with_all_pieces() {
         let mut game_board = GameBoard::new(3);
 
-        
-
-
         // laser in top right
         game_board.slots.get_mut(24).unwrap().occupying_game_piece =
-            Some(GamePiece::new(PieceType::Laser, Orientation::West));
+            Some(GamePiece::new(PieceType::Laser, Orientation::West, true));
 
         // splitting mirror piece on center col, top row slot
-        game_board.slots.get_mut(22).unwrap().occupying_game_piece =
-            Some(GamePiece::new(PieceType::SplittingMirror, Orientation::East));
+        game_board.slots.get_mut(22).unwrap().occupying_game_piece = Some(GamePiece::new(
+            PieceType::SplittingMirror,
+            Orientation::East,
+            true,
+        ));
 
         // target 1: top left slot, target facing east
-        game_board.slots.get_mut(20).unwrap().occupying_game_piece =
-            Some(GamePiece::new(PieceType::SingleMirror, Orientation::East));
+        game_board.slots.get_mut(20).unwrap().occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            Orientation::East,
+            true,
+        ));
 
         // gate piece, middle col  row[3]
         game_board.slots.get_mut(17).unwrap().occupying_game_piece =
-        Some(GamePiece::new(PieceType::Gate, Orientation::South));
+            Some(GamePiece::new(PieceType::Gate, Orientation::South, true));
 
         // block piece, true center
         game_board.slots.get_mut(12).unwrap().occupying_game_piece =
-        Some(GamePiece::new(PieceType::Block, Orientation::West));
+            Some(GamePiece::new(PieceType::Block, Orientation::West, true));
 
         // splitting mirror piece on center col, row[1] slot
-        game_board.slots.get_mut(7).unwrap().occupying_game_piece =
-            Some(GamePiece::new(PieceType::SplittingMirror, Orientation::East));
+        game_board.slots.get_mut(7).unwrap().occupying_game_piece = Some(GamePiece::new(
+            PieceType::SplittingMirror,
+            Orientation::East,
+            true,
+        ));
 
         // double mirror piece on bottom middle slot, facing south
-        game_board.slots.get_mut(2).unwrap().occupying_game_piece =
-        Some(GamePiece::new(PieceType::DoubleMirror, Orientation::South));
+        game_board.slots.get_mut(2).unwrap().occupying_game_piece = Some(GamePiece::new(
+            PieceType::DoubleMirror,
+            Orientation::South,
+            true,
+        ));
 
         // target 2: left col, row[1] slot, facing east
-        game_board.slots.get_mut(5).unwrap().occupying_game_piece =
-            Some(GamePiece::new(PieceType::SingleMirror, Orientation::East));
+        game_board.slots.get_mut(5).unwrap().occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            Orientation::East,
+            true,
+        ));
 
         // target 3: bottom right slot, facing west
-        game_board.slots.get_mut(4).unwrap().occupying_game_piece =
-            Some(GamePiece::new(PieceType::SingleMirror, Orientation::West));
-
+        game_board.slots.get_mut(4).unwrap().occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            Orientation::West,
+            true,
+        ));
 
         game_board = game_board.calculate_result();
         println!("lit targets: {}", game_board.count_lit_targets());
