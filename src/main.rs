@@ -272,7 +272,24 @@ impl GameBoard {
             self.laser_positions = new_laser_positions;
             self.turns += 1;
         }
-        self.valid_solution = Some(self.count_lit_targets() == self.targets);
+        self.valid_solution = Some(
+            (self.count_lit_targets() == self.targets)
+                && (self
+                    .slots
+                    .iter()
+                    .filter_map(|slot| {
+                        if let Some(piece) = &slot.occupying_game_piece {
+                            if piece.must_light() {
+                                piece.is_lit()
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .all(|b| b)),
+        );
         self
     }
 }
@@ -285,7 +302,10 @@ struct Puzzle {
 impl Puzzle {
     fn check_solution(self) -> bool {
         // assumes we've already checked the setup
-        self.start_game_board.calculate_result().valid_solution.unwrap_or_else(|| false)
+        self.start_game_board
+            .calculate_result()
+            .valid_solution
+            .unwrap_or_else(|| false)
     }
 
     // make sure the number of pieces is a valid puzzle
@@ -377,6 +397,7 @@ mod test {
             PieceType::Laser,
             Some(Orientation::West),
             true,
+            false,
         ));
 
         // splitting mirror piece on center col, top row slot
@@ -384,6 +405,7 @@ mod test {
             PieceType::SplittingMirror,
             Some(Orientation::East),
             true,
+            false,
         ));
 
         // target 1: top left slot, target facing east
@@ -391,6 +413,7 @@ mod test {
             PieceType::SingleMirror,
             Some(Orientation::East),
             true,
+            false,
         ));
 
         // gate piece, middle col  row[3]
@@ -398,6 +421,7 @@ mod test {
             PieceType::Gate,
             Some(Orientation::South),
             true,
+            false,
         ));
 
         // block piece, true center
@@ -405,6 +429,7 @@ mod test {
             PieceType::Block,
             Some(Orientation::West),
             true,
+            false,
         ));
 
         // splitting mirror piece on center col, row[1] slot
@@ -412,6 +437,7 @@ mod test {
             PieceType::SplittingMirror,
             Some(Orientation::East),
             true,
+            false,
         ));
 
         // double mirror piece on bottom middle slot, facing south
@@ -419,6 +445,7 @@ mod test {
             PieceType::DoubleMirror,
             Some(Orientation::South),
             true,
+            false,
         ));
 
         // target 2: left col, row[1] slot, facing east
@@ -426,6 +453,7 @@ mod test {
             PieceType::SingleMirror,
             Some(Orientation::East),
             true,
+            false,
         ));
 
         // target 3: bottom right slot, facing west
@@ -433,6 +461,7 @@ mod test {
             PieceType::SingleMirror,
             Some(Orientation::West),
             true,
+            false,
         ));
 
         game_board = game_board.calculate_result();

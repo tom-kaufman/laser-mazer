@@ -18,6 +18,7 @@ pub struct GamePiece {
     lit: Option<bool>,
     target_lit: Option<bool>,
     starting_piece: bool,
+    must_light: bool,
 }
 
 impl GamePiece {
@@ -25,6 +26,7 @@ impl GamePiece {
         piece_type: PieceType,
         orientation: Option<Orientation>,
         starting_piece: bool,
+        mut must_light: bool,
     ) -> Self {
         let (lit, target_lit) = match piece_type {
             PieceType::Laser => (Some(true), None),
@@ -32,12 +34,16 @@ impl GamePiece {
             PieceType::Gate => (None, None),
             _ => (Some(false), None),
         };
+        if piece_type != PieceType::SingleMirror {
+            must_light = false;
+        }
         Self {
             piece_type,
             lit,
             target_lit,
             orientation,
             starting_piece,
+            must_light,
         }
     }
 
@@ -59,6 +65,10 @@ impl GamePiece {
 
     pub fn is_starting_piece(&self) -> bool {
         self.starting_piece
+    }
+
+    pub fn must_light(&self) -> bool {
+        self.must_light
     }
 
     pub fn outbound_lasers_given_inbound_laser_direction(
