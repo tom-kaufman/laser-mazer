@@ -34,7 +34,12 @@ impl GamePiece {
             PieceType::Gate => (None, None),
             _ => (Some(false), None),
         };
-        if piece_type != PieceType::SingleMirror {
+        if piece_type != PieceType::SingleMirror && must_light {
+            println!("WARNING tried to make a non-target piece required to be lit");
+            must_light = false;
+        }
+        if !starting_piece && must_light {
+            println!("WARNING tried to make a non-starting piece required to be lit");
             must_light = false;
         }
         Self {

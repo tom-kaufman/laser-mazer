@@ -120,6 +120,26 @@ impl GameBoard {
             return false;
         };
 
+        // check that all rotations are set
+        if self
+            .slots
+            .iter()
+            .filter_map(|slot| {
+                if let Some(piece) = &slot.occupying_game_piece {
+                    if piece.get_orientation().is_none() {
+                        Some(true)
+                    } else {
+                        Some(false)
+                    }
+                } else {
+                    None
+                }
+            })
+            .any(|b| b)
+        {
+            return false;
+        }
+
         // make sure one piece is a laser
         // also sets the initial laser
         if self
@@ -302,6 +322,11 @@ struct Puzzle {
 impl Puzzle {
     fn check_solution(self) -> bool {
         // assumes we've already checked the setup
+
+        if !self.available_game_pieces.is_empty() {
+            return false;
+        }
+
         self.start_game_board
             .calculate_result()
             .valid_solution
@@ -328,9 +353,34 @@ impl Puzzle {
         }
 
         if !pieces.contains_key(&PieceType::Laser) {
+            println!("No laser in the puzzle!");
             return false;
         }
         if !pieces.contains_key(&PieceType::SingleMirror) {
+            println!("No single mirror in the puzzle!");
+            return false;
+        }
+
+        let must_light_count = self
+            .start_game_board
+            .slots
+            .iter()
+            .map(|slot| {
+                if let Some(piece) = &slot.occupying_game_piece {
+                    if piece.must_light() {
+                        1
+                    } else {
+                        0
+                    }
+                } else {
+                    0
+                }
+            })
+            .sum::<u8>(); // Slots is an array of length 25, cannot overflow
+
+        if self.start_game_board.targets < must_light_count {
+            // if there are more pieces that must be lit than there are targets to the puzzle, invalid config
+            println!("Must light count exceeds puzzle's number of targets! targets: {}, must light count: {}", self.start_game_board.targets, must_light_count);
             return false;
         }
 
@@ -341,14 +391,16 @@ impl Puzzle {
                 PieceType::DoubleMirror => (0, 1),
                 PieceType::Laser => (1, 1),
                 PieceType::SingleMirror => (1, 5),
-                PieceType::SplittingMirror => (1, 2),
+                PieceType::SplittingMirror => (
+                    &self.start_game_board.targets - 1,
+                    &self.start_game_board.targets - 1,
+                ),
             };
             if (count < min_count) || (count > max_count) {
+                println!("Invalid piece count for piece type {:?}!", piece_type);
                 return false;
             }
         }
-
-        // TODO check "must lit" vs number of splitting mirrors
 
         true
     }
@@ -467,5 +519,24 @@ mod test {
         game_board = game_board.calculate_result();
         println!("lit targets: {}", game_board.count_lit_targets());
         assert!(game_board.valid_solution.unwrap())
+    }
+
+    #[test]
+    fn test_puzzle_validation() {
+        let mut start_game_board = GameBoard::new(2);
+        start_game_board.slots[0].occupying_game_piece =
+            Some(GamePiece::new(PieceType::Laser, None, true, false));
+        start_game_board.slots[1].occupying_game_piece =
+            Some(GamePiece::new(PieceType::SingleMirror, None, true, true));
+        let mut available_game_pieces = vec![];
+        available_game_pieces.push(GamePiece::new(PieceType::SingleMirror, None, false, false));
+        available_game_pieces.push(GamePiece::new(PieceType::DoubleMirror, None, false, false));
+        available_game_pieces.push(GamePiece::new(PieceType::Block, None, false, false));
+        let puzzle = Puzzle {
+            available_game_pieces,
+            start_game_board,
+        };
+        assert_eq!(puzzle.check_setup(), true);
+        assert_eq!(puzzle.check_solution(), false);
     }
 }
