@@ -486,7 +486,6 @@ impl Puzzle {
             if node.clone().check_solution() {
                 return Some(node);
             }
-
         }
         // return none if we get through the entire stack
         None
@@ -692,6 +691,67 @@ mod test {
             available_game_pieces,
             start_game_board,
         };
+        let t0 = time::Instant::now();
+        let result = puzzle.dfs();
+        let t1 = time::Instant::now();
+        println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
+        assert!(result.is_some());
+    }
+
+    // the first puzzle to use every type of piece
+    #[test]
+    fn test_solver_puzzle_25() {
+        let mut start_game_board = GameBoard::new(2);
+        start_game_board.slots[3].occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            None,
+            true,
+            true,
+        ));
+        start_game_board.slots[7].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Gate,
+            None,
+            true,
+            false,
+        ));
+        start_game_board.slots[8].occupying_game_piece = Some(GamePiece::new(
+            PieceType::SplittingMirror,
+            None,
+            true,
+            false,
+        ));
+        start_game_board.slots[20].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Laser,
+            None,
+            true,
+            false,
+        ));
+        start_game_board.slots[23].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Block,
+            Some(Orientation::East),
+            true,
+            false,
+        ));
+
+        let mut available_game_pieces = vec![];
+        available_game_pieces.push(GamePiece::new(
+            PieceType::SingleMirror,
+            None,
+            false,
+            true,
+        ));
+        available_game_pieces.push(GamePiece::new(
+            PieceType::DoubleMirror,
+            None,
+            false,
+            false,
+        ));
+
+        let puzzle = Puzzle {
+            available_game_pieces,
+            start_game_board,
+        };
+
         let t0 = time::Instant::now();
         let result = puzzle.dfs();
         let t1 = time::Instant::now();
