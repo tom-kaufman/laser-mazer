@@ -1,7 +1,8 @@
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(PartialEq, Debug, Clone, Hash, Eq, Copy)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Hash, Eq, Copy)]
 pub enum PieceType {
     Laser,
     SingleMirror,
@@ -11,7 +12,7 @@ pub enum PieceType {
     SplittingMirror,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct GamePiece {
     piece_type: PieceType,
     pub orientation: Option<Orientation>,
@@ -36,10 +37,6 @@ impl GamePiece {
         };
         if piece_type != PieceType::SingleMirror && must_light {
             println!("WARNING tried to make a non-target piece required to be lit");
-            must_light = false;
-        }
-        if !starting_piece && must_light {
-            println!("WARNING tried to make a non-starting piece required to be lit");
             must_light = false;
         }
         Self {
@@ -174,7 +171,7 @@ impl GamePiece {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub enum Orientation {
     North,
     South,

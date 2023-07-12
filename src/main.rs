@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 mod pieces;
 use pieces::{GamePiece, Orientation, PieceType, ORIENTATION_ORDER};
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct Slot {
     occupying_game_piece: Option<GamePiece>,
     active_laser_directions: HashMap<Orientation, bool>,
@@ -72,7 +74,7 @@ impl Slot {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct LaserPosition {
     position: (u8, u8),
     orientation: Orientation,
@@ -88,7 +90,7 @@ impl LaserPosition {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 struct GameBoard {
     slots: [Slot; 25],
     laser_positions: [Option<LaserPosition>; 3],
@@ -313,7 +315,7 @@ impl GameBoard {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 struct Puzzle {
     start_game_board: GameBoard,
     available_game_pieces: Vec<GamePiece>,
@@ -410,12 +412,12 @@ impl Puzzle {
             panic!("Invalid puzzle!");
         }
         let mut stack: Vec<Puzzle> = vec![self];
-        let mut leafs_encountered = 0;
+        // let mut leafs_encountered = 0;
         while !stack.is_empty() {
-            println!(
-                "Stack len: {}, encountered {leafs_encountered} leafs",
-                stack.len()
-            );
+            // println!(
+            //     "Stack len: {}, encountered {leafs_encountered} leafs",
+            //     stack.len()
+            // );
             let mut node = stack
                 .pop()
                 .expect("Loop condition is that stack is not empty");
@@ -482,7 +484,7 @@ impl Puzzle {
 
             // check the solution
             // println!("Checking leaf: \n{:?}\n\n", node);
-            leafs_encountered += 1;
+            // leafs_encountered += 1;
             if node.clone().check_solution() {
                 return Some(node);
             }
@@ -702,30 +704,18 @@ mod test {
     #[test]
     fn test_solver_puzzle_25() {
         let mut start_game_board = GameBoard::new(2);
-        start_game_board.slots[3].occupying_game_piece = Some(GamePiece::new(
-            PieceType::SingleMirror,
-            None,
-            true,
-            true,
-        ));
-        start_game_board.slots[7].occupying_game_piece = Some(GamePiece::new(
-            PieceType::Gate,
-            None,
-            true,
-            false,
-        ));
+        start_game_board.slots[3].occupying_game_piece =
+            Some(GamePiece::new(PieceType::SingleMirror, None, true, true));
+        start_game_board.slots[7].occupying_game_piece =
+            Some(GamePiece::new(PieceType::Gate, None, true, false));
         start_game_board.slots[8].occupying_game_piece = Some(GamePiece::new(
             PieceType::SplittingMirror,
             None,
             true,
             false,
         ));
-        start_game_board.slots[20].occupying_game_piece = Some(GamePiece::new(
-            PieceType::Laser,
-            None,
-            true,
-            false,
-        ));
+        start_game_board.slots[20].occupying_game_piece =
+            Some(GamePiece::new(PieceType::Laser, None, true, false));
         start_game_board.slots[23].occupying_game_piece = Some(GamePiece::new(
             PieceType::Block,
             Some(Orientation::East),
@@ -734,18 +724,8 @@ mod test {
         ));
 
         let mut available_game_pieces = vec![];
-        available_game_pieces.push(GamePiece::new(
-            PieceType::SingleMirror,
-            None,
-            false,
-            true,
-        ));
-        available_game_pieces.push(GamePiece::new(
-            PieceType::DoubleMirror,
-            None,
-            false,
-            false,
-        ));
+        available_game_pieces.push(GamePiece::new(PieceType::SingleMirror, None, false, true));
+        available_game_pieces.push(GamePiece::new(PieceType::DoubleMirror, None, false, false));
 
         let puzzle = Puzzle {
             available_game_pieces,
@@ -757,6 +737,9 @@ mod test {
         let t1 = time::Instant::now();
         println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
         assert!(result.is_some());
+
+        let pretty_json = serde_json::to_string_pretty(&result.unwrap()).unwrap();
+        println!("{pretty_json}");
     }
 
     #[test]
@@ -768,30 +751,14 @@ mod test {
             true,
             false,
         ));
-        start_game_board.slots[8].occupying_game_piece = Some(GamePiece::new(
-            PieceType::Gate,
-            None,
-            true,
-            false,
-        ));
-        start_game_board.slots[10].occupying_game_piece = Some(GamePiece::new(
-            PieceType::SingleMirror,
-            None,
-            true,
-            true,
-        ));
-        start_game_board.slots[12].occupying_game_piece = Some(GamePiece::new(
-            PieceType::DoubleMirror,
-            None,
-            true,
-            false,
-        ));
-        start_game_board.slots[15].occupying_game_piece = Some(GamePiece::new(
-            PieceType::SingleMirror,
-            None,
-            true,
-            false,
-        ));
+        start_game_board.slots[8].occupying_game_piece =
+            Some(GamePiece::new(PieceType::Gate, None, true, false));
+        start_game_board.slots[10].occupying_game_piece =
+            Some(GamePiece::new(PieceType::SingleMirror, None, true, true));
+        start_game_board.slots[12].occupying_game_piece =
+            Some(GamePiece::new(PieceType::DoubleMirror, None, true, false));
+        start_game_board.slots[15].occupying_game_piece =
+            Some(GamePiece::new(PieceType::SingleMirror, None, true, false));
         start_game_board.slots[17].occupying_game_piece = Some(GamePiece::new(
             PieceType::Block,
             Some(Orientation::North),
@@ -806,24 +773,9 @@ mod test {
         ));
 
         let mut available_game_pieces = vec![];
-        available_game_pieces.push(GamePiece::new(
-            PieceType::SingleMirror,
-            None,
-            false,
-            false,
-        ));
-        available_game_pieces.push(GamePiece::new(
-            PieceType::SingleMirror,
-            None,
-            false,
-            false,
-        ));
-        available_game_pieces.push(GamePiece::new(
-            PieceType::SingleMirror,
-            None,
-            false,
-            false,
-        ));
+        available_game_pieces.push(GamePiece::new(PieceType::SingleMirror, None, false, false));
+        available_game_pieces.push(GamePiece::new(PieceType::SingleMirror, None, false, false));
+        available_game_pieces.push(GamePiece::new(PieceType::SingleMirror, None, false, false));
         available_game_pieces.push(GamePiece::new(
             PieceType::SplittingMirror,
             None,
@@ -841,6 +793,5 @@ mod test {
         let t1 = time::Instant::now();
         println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
         assert!(result.is_some());
-
     }
 }
