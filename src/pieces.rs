@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use std::fmt;
 
-#[derive(PartialEq, Debug, Clone, Hash, Eq)]
+#[derive(PartialEq, Debug, Clone, Hash, Eq, Copy)]
 pub enum PieceType {
     Laser,
     SingleMirror,
@@ -11,7 +11,7 @@ pub enum PieceType {
     SplittingMirror,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct GamePiece {
     piece_type: PieceType,
     orientation: Option<Orientation>,
@@ -54,6 +54,10 @@ impl GamePiece {
 
     pub fn get_orientation(&self) -> Option<Orientation> {
         self.orientation.clone()
+    }
+
+    pub fn set_orientation_by_index(&mut self, idx: usize) {
+        self.orientation = Some(ORIENTATION_ORDER[idx].clone());
     }
 
     pub fn get_piece_type(&self) -> PieceType {

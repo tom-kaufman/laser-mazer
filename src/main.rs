@@ -3,7 +3,7 @@ use std::collections::HashMap;
 mod pieces;
 use pieces::{GamePiece, Orientation, PieceType, ORIENTATION_ORDER};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Slot {
     occupying_game_piece: Option<GamePiece>,
     active_laser_directions: HashMap<Orientation, bool>,
@@ -88,7 +88,7 @@ impl LaserPosition {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct GameBoard {
     slots: [Slot; 25],
     laser_positions: [Option<LaserPosition>; 3],
@@ -314,6 +314,7 @@ impl GameBoard {
     }
 }
 
+#[derive(Clone, Debug)]
 struct Puzzle {
     start_game_board: GameBoard,
     available_game_pieces: Vec<GamePiece>,
@@ -403,6 +404,63 @@ impl Puzzle {
         }
 
         true
+    }
+
+    fn dfs(self) -> Option<Self> {
+        if !self.check_setup() {
+            panic!("Invalid puzzle!");
+        }
+        let mut stack: Vec<Puzzle> = vec![self];
+        while !stack.is_empty() {
+            println!("Stack len: {}", stack.len());
+            let mut node = stack
+                .pop()
+                .expect("Loop condition is that stack is not empty");
+
+            // check if there are pieces to place
+            if let Some(piece) = node.available_game_pieces.pop() {
+                for i in 0..25 {
+                    if node.start_game_board.slots[i]
+                        .occupying_game_piece
+                        .is_none()
+                    {
+                        let mut new_node = node.clone();
+                        new_node.start_game_board.slots[i].occupying_game_piece =
+                            Some(piece.clone());
+                        stack.push(new_node);
+                    }
+                }
+                continue;
+            }
+
+            // check if there are pieces to rotate
+            for i in 0..25 {
+                let mut position: Option<usize> = None;
+                if let Some(piece) = &node.start_game_board.slots[i].occupying_game_piece {
+                    if piece.get_orientation().is_none() {
+                        position = Some(i);
+                    }
+                }
+                if let Some(position) = position {
+                    for x in 0..4 {
+                        let mut new_node = node.clone();
+                        new_node.start_game_board.slots[position]
+                            .occupying_game_piece
+                            .expect("We just validated that this index has a piece")
+                            .set_orientation_by_index(x);
+                        stack.push(new_node);
+                    }
+                    break;
+                }
+            }
+
+            // check the solution
+            if node.clone().check_solution() {
+                return Some(node);
+            }
+        }
+        // return none if we get through the entire stack
+        None
     }
 }
 
@@ -538,5 +596,41 @@ mod test {
         };
         assert_eq!(puzzle.check_setup(), true);
         assert_eq!(puzzle.check_solution(), false);
+    }
+
+    #[test]
+    fn test_solver_simple() {
+        let mut start_game_board = GameBoard::new(2);
+        start_game_board.slots[0].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Laser,
+            Some(Orientation::North),
+            true,
+            false,
+        ));
+        start_game_board.slots[6].occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            Some(Orientation::West),
+            true,
+            true,
+        ));
+        start_game_board.slots[6].occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            Some(Orientation::South),
+            true,
+            true,
+        ));
+        let mut available_game_pieces = vec![];
+        available_game_pieces.push(GamePiece::new(
+            PieceType::SplittingMirror,
+            None,
+            false,
+            false,
+        ));
+        let puzzle = Puzzle {
+            available_game_pieces,
+            start_game_board,
+        };
+        let result = puzzle.dfs();
+        println!("Result: {:?}", result);
     }
 }
