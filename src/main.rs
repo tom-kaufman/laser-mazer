@@ -32,10 +32,10 @@ impl Slot {
     /// returns None if it's out of the board
     fn index_from_position(position_coordinates: (u8, u8)) -> Option<u8> {
         if (position_coordinates.0 > 4) | (position_coordinates.1 > 4) {
-            println!(
-                "Invalid coordinates: {}, {}",
-                position_coordinates.0, position_coordinates.1
-            );
+            // println!(
+            //     "Invalid coordinates: {}, {}",
+            //     position_coordinates.0, position_coordinates.1
+            // );
             None
         } else {
             Some(position_coordinates.0 + position_coordinates.1 * 5)
@@ -201,7 +201,7 @@ impl GameBoard {
             .iter()
             .map(|laser_position| {
                 if let Some(laser_position) = laser_position {
-                    println!("Marching forward laser {:?}", laser_position);
+                    // println!("Marching forward laser {:?}", laser_position);
                     // iterating on the 3 potential active lasers, this laser is active
                     let position = Slot::index_from_position(laser_position.position)
                         .expect("no slot should be outside of the gameboard");
@@ -212,7 +212,7 @@ impl GameBoard {
                     if let Some(neighboring_slot_index) =
                         slot.neighboring_slot_from_orientation(laser_position.orientation)
                     {
-                        println!("Marching the laser forward, it's now at slot index {}", neighboring_slot_index);
+                        // println!("Marching the laser forward, it's now at slot index {}", neighboring_slot_index);
                         // the next slot in the laser's path is on the board
                         let neighboring_slot_active_direction = self.slots.get_mut(neighboring_slot_index as usize).expect("we just validated that we are on the board").active_laser_directions.get_mut(&laser_position.orientation).expect("this hashmap is populated with all the keys from the Orientation enum");
                         if *neighboring_slot_active_direction {
@@ -223,20 +223,20 @@ impl GameBoard {
 
                         if let Some(neighboring_piece) = self.slots.get_mut(neighboring_slot_index as usize).expect("we just validated that we are on the board").occupying_game_piece.as_mut() {
                             // the laser has hit a piece, we need to calculate the result
-                            println!("The laser has hit a piece of type {:?}", neighboring_piece.get_piece_type());
+                            // println!("The laser has hit a piece of type {:?}", neighboring_piece.get_piece_type());
                             let returned_orientations = neighboring_piece.outbound_lasers_given_inbound_laser_direction(laser_position.orientation);
-                            println!("After hitting the piece, the laser became these orientations: {:?}", returned_orientations);
+                            // println!("After hitting the piece, the laser became these orientations: {:?}", returned_orientations);
                             let mut result = [None, None];
                             for i in 0..2 {
                                 if let Some(orientation) = returned_orientations[i] {
                                     result[i] = Some(LaserPosition::new(neighboring_slot_index, orientation));
                                 }
                             }
-                            println!("Reconstructed those orientations into these laser positions: {:?}", result);
+                            // println!("Reconstructed those orientations into these laser positions: {:?}", result);
                             return result
                         } else {
                             // the laser hasn't hit a piece
-                            println!("The laser hasn't hit a piece, it's now over index {neighboring_slot_index} with orientation {:?}", laser_position.orientation);
+                            // println!("The laser hasn't hit a piece, it's now over index {neighboring_slot_index} with orientation {:?}", laser_position.orientation);
                             return [Some(LaserPosition::new(neighboring_slot_index, laser_position.orientation)), None]
                         }
                     }
@@ -254,10 +254,9 @@ impl GameBoard {
             return self;
         }
 
-        println!("has active lasers? {}", self.has_active_lasers());
+        // println!("has active lasers? {}", self.has_active_lasers());
         while self.has_active_lasers() {
-            //println!("TURN {}\n\n{:?}\n\n", self.turns, self);
-            println!("TURN {}\n\n", self.turns);
+            // println!("TURN {}\n\n", self.turns);
             let new_lasers: [[Option<LaserPosition>; 2]; 3] = self.calculate_new_laser_positions();
             let n_new_lasers = new_lasers
                 .iter()
@@ -414,20 +413,16 @@ impl Puzzle {
         let mut leafs_encountered = 0;
         while !stack.is_empty() {
             println!(
-                "\n\n\nStack len: {}, encountered {leafs_encountered} leafs",
+                "Stack len: {}, encountered {leafs_encountered} leafs",
                 stack.len()
             );
-            //TODO delete me
-            if stack.len() > 50 {
-                panic!("Stack length too long!");
-            }
             let mut node = stack
                 .pop()
                 .expect("Loop condition is that stack is not empty");
-            println!(
-                "Got a node off the stack with {} available pieces to place",
-                node.available_game_pieces.len()
-            );
+            // println!(
+            //     "Got a node off the stack with {} available pieces to place",
+            //     node.available_game_pieces.len()
+            // );
 
             // check if there are pieces to place
             if let Some(piece) = node.available_game_pieces.pop() {
@@ -436,10 +431,10 @@ impl Puzzle {
                         .occupying_game_piece
                         .is_none()
                     {
-                        println!(
-                            "Creating node: Adding piece of type {:?} to board at slot {i}",
-                            piece.get_piece_type()
-                        );
+                        // println!(
+                        //     "Creating node: Adding piece of type {:?} to board at slot {i}",
+                        //     piece.get_piece_type()
+                        // );
                         let mut new_node = node.clone();
                         new_node.start_game_board.slots[i].occupying_game_piece =
                             Some(piece.clone());
@@ -454,11 +449,11 @@ impl Puzzle {
             for i in 0..25 {
                 if let Some(piece) = &node.start_game_board.slots[i].occupying_game_piece {
                     if piece.get_orientation().is_none() {
-                        println!("Found a rotationally free piece at slot {i}");
+                        // println!("Found a rotationally free piece at slot {i}");
                         position = Some(i);
                         break;
                     } else {
-                        println!("Found a piece at slot {i} but it is not rotationally free");
+                        // println!("Found a piece at slot {i} but it is not rotationally free");
                     }
                 }
             }
@@ -466,20 +461,20 @@ impl Puzzle {
                 for x in 0..4 {
                     // this change isn't sticking
                     let mut new_node = node.clone();
-                    println!("Creating node: Setting rotation of piece at slot {position} to orientation index {x}");
-                    println!(
-                        "Node slot {position} before setting rotation:{:?}",
-                        new_node.start_game_board.slots[position]
-                    );
+                    // println!("Creating node: Setting rotation of piece at slot {position} to orientation index {x}");
+                    // println!(
+                    //     "Node slot {position} before setting rotation:{:?}",
+                    //     new_node.start_game_board.slots[position]
+                    // );
                     if let Some(piece) =
                         &mut new_node.start_game_board.slots[position].occupying_game_piece
                     {
                         (*piece).orientation = Some(ORIENTATION_ORDER[x].clone());
                     }
-                    println!(
-                        "Node slot {position} after setting rotation:{:?}",
-                        new_node.start_game_board.slots[position]
-                    );
+                    // println!(
+                    //     "Node slot {position} after setting rotation:{:?}",
+                    //     new_node.start_game_board.slots[position]
+                    // );
                     stack.push(new_node);
                 }
             }
@@ -503,6 +498,7 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::time;
 
     #[test]
     fn test_inbound_reorientation() {
@@ -662,7 +658,42 @@ mod test {
             available_game_pieces,
             start_game_board,
         };
+        let t0 = time::Instant::now();
         let result = puzzle.dfs();
-        println!("Result: {:?}", result);
+        let t1 = time::Instant::now();
+        println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn test_solver_puzzle_5() {
+        let mut start_game_board = GameBoard::new(2);
+        start_game_board.slots[1].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Block,
+            Some(Orientation::North),
+            true,
+            false,
+        ));
+        start_game_board.slots[9].occupying_game_piece =
+            Some(GamePiece::new(PieceType::SingleMirror, None, true, true));
+        start_game_board.slots[9].occupying_game_piece =
+            Some(GamePiece::new(PieceType::SingleMirror, None, true, true));
+        let mut available_game_pieces = vec![];
+        available_game_pieces.push(GamePiece::new(
+            PieceType::SplittingMirror,
+            None,
+            false,
+            false,
+        ));
+        available_game_pieces.push(GamePiece::new(PieceType::Laser, None, false, false));
+        let puzzle = Puzzle {
+            available_game_pieces,
+            start_game_board,
+        };
+        let t0 = time::Instant::now();
+        let result = puzzle.dfs();
+        let t1 = time::Instant::now();
+        println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
+        assert!(result.is_some());
     }
 }
