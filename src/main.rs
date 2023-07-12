@@ -411,11 +411,23 @@ impl Puzzle {
             panic!("Invalid puzzle!");
         }
         let mut stack: Vec<Puzzle> = vec![self];
+        let mut leafs_encountered = 0;
         while !stack.is_empty() {
-            println!("Stack len: {}", stack.len());
+            println!(
+                "\n\n\nStack len: {}, encountered {leafs_encountered} leafs",
+                stack.len()
+            );
+            //TODO delete me
+            if stack.len() > 50 {
+                panic!("Stack length too long!");
+            }
             let mut node = stack
                 .pop()
                 .expect("Loop condition is that stack is not empty");
+            println!(
+                "Got a node off the stack with {} available pieces to place",
+                node.available_game_pieces.len()
+            );
 
             // check if there are pieces to place
             if let Some(piece) = node.available_game_pieces.pop() {
@@ -424,6 +436,10 @@ impl Puzzle {
                         .occupying_game_piece
                         .is_none()
                     {
+                        println!(
+                            "Creating node: Adding piece of type {:?} to board at slot {i}",
+                            piece.get_piece_type()
+                        );
                         let mut new_node = node.clone();
                         new_node.start_game_board.slots[i].occupying_game_piece =
                             Some(piece.clone());
@@ -434,27 +450,43 @@ impl Puzzle {
             }
 
             // check if there are pieces to rotate
+            let mut position: Option<usize> = None;
             for i in 0..25 {
-                let mut position: Option<usize> = None;
                 if let Some(piece) = &node.start_game_board.slots[i].occupying_game_piece {
                     if piece.get_orientation().is_none() {
+                        println!("Found a rotationally free piece at slot {i}");
                         position = Some(i);
+                        break;
+                    } else {
+                        println!("Found a piece at slot {i} but it is not rotationally free");
                     }
                 }
-                if let Some(position) = position {
-                    for x in 0..4 {
-                        let mut new_node = node.clone();
+            }
+            if let Some(position) = position {
+                for x in 0..4 {
+                    // this change isn't sticking
+                    let mut new_node = node.clone();
+                    println!("Creating node: Setting rotation of piece at slot {position} to orientation index {x}");
+                    println!(
+                        "Node slot {position} before setting rotation:{:?}",
                         new_node.start_game_board.slots[position]
-                            .occupying_game_piece
-                            .expect("We just validated that this index has a piece")
-                            .set_orientation_by_index(x);
-                        stack.push(new_node);
+                    );
+                    if let Some(piece) =
+                        &mut new_node.start_game_board.slots[position].occupying_game_piece
+                    {
+                        (*piece).orientation = Some(ORIENTATION_ORDER[x].clone());
                     }
-                    break;
+                    println!(
+                        "Node slot {position} after setting rotation:{:?}",
+                        new_node.start_game_board.slots[position]
+                    );
+                    stack.push(new_node);
                 }
             }
 
             // check the solution
+            // println!("Checking leaf: \n{:?}\n\n", node);
+            leafs_encountered += 1;
             if node.clone().check_solution() {
                 return Some(node);
             }
@@ -613,7 +645,7 @@ mod test {
             true,
             true,
         ));
-        start_game_board.slots[6].occupying_game_piece = Some(GamePiece::new(
+        start_game_board.slots[9].occupying_game_piece = Some(GamePiece::new(
             PieceType::SingleMirror,
             Some(Orientation::South),
             true,

@@ -14,7 +14,7 @@ pub enum PieceType {
 #[derive(Debug, Clone, Copy)]
 pub struct GamePiece {
     piece_type: PieceType,
-    orientation: Option<Orientation>,
+    pub orientation: Option<Orientation>,
     lit: Option<bool>,
     target_lit: Option<bool>,
     starting_piece: bool,
