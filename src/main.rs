@@ -758,4 +758,89 @@ mod test {
         println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
         assert!(result.is_some());
     }
+
+    #[test]
+    fn test_solver_puzzle_59() {
+        let mut start_game_board = GameBoard::new(3);
+        start_game_board.slots[6].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Laser,
+            Some(Orientation::North),
+            true,
+            false,
+        ));
+        start_game_board.slots[8].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Gate,
+            None,
+            true,
+            false,
+        ));
+        start_game_board.slots[10].occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            None,
+            true,
+            true,
+        ));
+        start_game_board.slots[12].occupying_game_piece = Some(GamePiece::new(
+            PieceType::DoubleMirror,
+            None,
+            true,
+            false,
+        ));
+        start_game_board.slots[15].occupying_game_piece = Some(GamePiece::new(
+            PieceType::SingleMirror,
+            None,
+            true,
+            false,
+        ));
+        start_game_board.slots[17].occupying_game_piece = Some(GamePiece::new(
+            PieceType::Block,
+            Some(Orientation::North),
+            true,
+            false,
+        ));
+        start_game_board.slots[18].occupying_game_piece = Some(GamePiece::new(
+            PieceType::SplittingMirror,
+            None,
+            true,
+            false,
+        ));
+
+        let mut available_game_pieces = vec![];
+        available_game_pieces.push(GamePiece::new(
+            PieceType::SingleMirror,
+            None,
+            false,
+            false,
+        ));
+        available_game_pieces.push(GamePiece::new(
+            PieceType::SingleMirror,
+            None,
+            false,
+            false,
+        ));
+        available_game_pieces.push(GamePiece::new(
+            PieceType::SingleMirror,
+            None,
+            false,
+            false,
+        ));
+        available_game_pieces.push(GamePiece::new(
+            PieceType::SplittingMirror,
+            None,
+            false,
+            false,
+        ));
+
+        let puzzle = Puzzle {
+            available_game_pieces,
+            start_game_board,
+        };
+
+        let t0 = time::Instant::now();
+        let result = puzzle.dfs();
+        let t1 = time::Instant::now();
+        println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
+        assert!(result.is_some());
+
+    }
 }
