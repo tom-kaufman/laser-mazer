@@ -477,6 +477,7 @@ impl Puzzle {
                     // );
                     stack.push(new_node);
                 }
+                continue;
             }
 
             // check the solution
@@ -485,6 +486,7 @@ impl Puzzle {
             if node.clone().check_solution() {
                 return Some(node);
             }
+
         }
         // return none if we get through the entire stack
         None
@@ -641,7 +643,7 @@ mod test {
             true,
             true,
         ));
-        start_game_board.slots[9].occupying_game_piece = Some(GamePiece::new(
+        start_game_board.slots[10].occupying_game_piece = Some(GamePiece::new(
             PieceType::SingleMirror,
             Some(Orientation::South),
             true,
@@ -661,7 +663,7 @@ mod test {
         let t0 = time::Instant::now();
         let result = puzzle.dfs();
         let t1 = time::Instant::now();
-        println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
+        println!("Result: {:?}; \n\nelapsed: {:?}", result, t1 - t0);
         assert!(result.is_some());
     }
 
@@ -676,7 +678,7 @@ mod test {
         ));
         start_game_board.slots[9].occupying_game_piece =
             Some(GamePiece::new(PieceType::SingleMirror, None, true, true));
-        start_game_board.slots[9].occupying_game_piece =
+        start_game_board.slots[21].occupying_game_piece =
             Some(GamePiece::new(PieceType::SingleMirror, None, true, true));
         let mut available_game_pieces = vec![];
         available_game_pieces.push(GamePiece::new(
