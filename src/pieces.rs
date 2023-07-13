@@ -15,8 +15,11 @@ pub enum PieceType {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct GamePiece {
     piece_type: PieceType,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub orientation: Option<Orientation>,
+    #[serde(skip)]
     lit: Option<bool>,
+    #[serde(skip)]
     target_lit: Option<bool>,
     starting_piece: bool,
     must_light: bool,

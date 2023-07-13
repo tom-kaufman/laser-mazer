@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use serde::{Deserialize, Serialize};
 
@@ -7,9 +9,13 @@ use pieces::{GamePiece, Orientation, PieceType, ORIENTATION_ORDER};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct Slot {
+    #[serde(skip_serializing_if = "Option::is_none")]
     occupying_game_piece: Option<GamePiece>,
+    #[serde(skip)]
     active_laser_directions: HashMap<Orientation, bool>,
+    #[serde(skip)]
     position_index: u8,
+    #[serde(skip)]
     position: (u8, u8),
 }
 
@@ -93,9 +99,12 @@ impl LaserPosition {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct GameBoard {
     slots: [Slot; 25],
+    #[serde(skip)]
     laser_positions: [Option<LaserPosition>; 3],
     targets: u8,
+    #[serde(skip)]
     turns: usize,
+    #[serde(skip)]
     valid_solution: Option<bool>,
 }
 
@@ -316,8 +325,10 @@ impl GameBoard {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(transparent)]
 struct Puzzle {
     start_game_board: GameBoard,
+    #[serde(skip)]
     available_game_pieces: Vec<GamePiece>,
 }
 
@@ -502,6 +513,7 @@ fn main() {
 mod test {
     use super::*;
     use std::time;
+    use std::mem;
 
     #[test]
     fn test_inbound_reorientation() {
@@ -733,13 +745,13 @@ mod test {
         };
 
         let t0 = time::Instant::now();
-        let result = puzzle.dfs();
+        let result = puzzle.clone().dfs();
         let t1 = time::Instant::now();
-        println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
+        // println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
         assert!(result.is_some());
 
-        let pretty_json = serde_json::to_string_pretty(&result.unwrap()).unwrap();
-        println!("{pretty_json}");
+        let url = format!("http://fofgof.xyz/lm?solved={}", urlencoding::encode(&serde_json::to_string(&result.unwrap()).unwrap()));
+        println!("{url}");
     }
 
     #[test]
@@ -793,5 +805,19 @@ mod test {
         let t1 = time::Instant::now();
         println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
         assert!(result.is_some());
+    }
+
+    #[test]
+    fn size_of_puzzle() {        
+        let start_game_board = GameBoard::new(3);
+        let available_game_pieces = vec![];
+
+        let puzzle = Puzzle {
+            available_game_pieces,
+            start_game_board,
+        };
+
+        let s = mem::size_of_val(&puzzle);
+        println!("puzzle is {s} bytes");
     }
 }
