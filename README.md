@@ -28,23 +28,7 @@
     - gate pieces never go on corners
 
 
-# TODO
-- [X] Implement remaining pieces
-    - [X] Blue double sided mirror
-    - [X] Green splitting mirror
-    - [X] Black blocking piece
-- `Puzzle`
-    - [ ] Construct a puzzle from a json
-    - [ ] Validate that the `Puzzle` meets the constraints of the game (max # of each type of piece)
-- `GameBoard`
-    - [ ] Construct a game baord from a json
-    - [ ] Validate the 
-
-
-# Thoughts on implementing DFS
-- Each node is a board state (`Puzzle` instance)
-- The children of each node represent the possible moves
-    - If `available_game_pieces` is not empty, only show branches for placing the next piece
-    - If  the `GameBoard` has any `Slot`s with `Some(GamePiece)` with `orientation = None`, the branches will be the possible rotations of that piece
-    - Leafs represent valid `Puzzle`s: no more pieces to place or pieces to rotate
-- The graph representing all of the choices is too large to fit in memory. We must use a stack to keep track of our moves.
+# Rewrite Plan
+1. Rewrite a clean implementation of structs: `Puzzle`, `GameBoard`, `GamePiece`. These structs will be "human usable".
+2. Create a compressed representation `Puzzle` that will be used for DFS. Implement `From` trait for `Puzzle` into `TinyPuzzle` and vice versa
+3. Write methods on `TinyPuzzle` in such a way that the branch pruning is easily read and modified (how?)
