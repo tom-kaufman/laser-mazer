@@ -1,6 +1,6 @@
 use crate::orientation::Orientation;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ActiveLaser {
     pub slot_index: usize,
     pub orientation: Orientation,

@@ -1,6 +1,6 @@
 use crate::orientation::{Orientation, };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Token {
     type_: TokenType,
     pub orientation: Option<Orientation>,

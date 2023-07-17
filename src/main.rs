@@ -159,6 +159,7 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::time;
 
     // /| -- /  -- X
     //       ||
@@ -232,5 +233,39 @@ mod test {
         let mut solver_node = solver.dfs_stack.lock().unwrap();
         let result = solver_node.pop().expect("LaserMazeSolver initializes with a node").check();
         assert!(result)
+    }
+
+    #[test]
+    fn test_solver_simple() {
+        let mut slots: [Option<Token>; 25] = Default::default();
+
+        slots[0] = Some(Token::new(
+            TokenType::Laser,
+            Some(Orientation::North),
+            false,
+        ));
+        slots[6] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::West),
+            true,
+        ));
+        slots[10] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::South),
+            false,
+        ));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+        
+        let t0 = time::Instant::now();
+        let result = solver.solve(16);
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+
     }
 }

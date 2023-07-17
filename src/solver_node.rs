@@ -2,7 +2,7 @@ use crate::{token::{Token, TokenType}, orientation::Orientation};
 mod active_laser;
 use active_laser::ActiveLaser;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct SolverNode {
     cells: [Option<Token>; 25],
     tokens_to_be_added: Vec<Token>,
