@@ -51,13 +51,11 @@ impl LaserMazeSolver {
         // make sure count of each type of Token is valid
         // count piece types on the grid
         let mut token_counts: HashMap<TokenType, u8> = HashMap::new();
-        for cell in &self.initial_grid_config {
-            if let Some(token) = cell {
-                token_counts
-                    .entry(*token.type_())
-                    .and_modify(|counter| *counter += 1)
-                    .or_insert(1);
-            }
+        for token in self.initial_grid_config.iter().flatten() {
+            token_counts
+                .entry(*token.type_())
+                .and_modify(|counter| *counter += 1)
+                .or_insert(1);
         }
         // count pieces to be added
         for token in &self.tokens_to_be_added {
@@ -165,9 +163,10 @@ fn main() {
         false,
     ));
 
-    let mut tokens_to_be_added = vec![];
-    tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, true));
-    tokens_to_be_added.push(Token::new(TokenType::DoubleMirror, None, false));
+    let tokens_to_be_added = vec![
+        Token::new(TokenType::TargetMirror, None, true),
+        Token::new(TokenType::DoubleMirror, None, false),
+    ];
 
     let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
 

@@ -89,31 +89,29 @@ impl SolverNode {
             // inner loop: iterate on lasers and do some work on Some()s until no more active lasers
             let mut new_laser_index = 0;
             let mut new_lasers = [None, None, None];
-            for laser in self.active_lasers {
-                if let Some(laser) = laser {
-                    // if the laser is still on the board after going to the next position, check for
-                    // a token. if there's a token, do the interactions.
-                    // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
-                    if let Some(next_laser_position) = laser.next_position() {
-                        if let Some(token) = &mut self.cells[next_laser_position] {
-                            for new_laser_direction in token
-                                .outbound_lasers_given_inbound_laser_direction(&laser.orientation)
-                            {
-                                if let Some(new_laser_direction) = new_laser_direction {
-                                    new_lasers[new_laser_index] = Some(ActiveLaser {
-                                        slot_index: next_laser_position,
-                                        orientation: new_laser_direction,
-                                    });
-                                    new_laser_index += 1;
-                                }
-                            }
-                        } else {
+            for laser in self.active_lasers.into_iter().flatten() {
+                // if the laser is still on the board after going to the next position, check for
+                // a token. if there's a token, do the interactions.
+                // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
+                if let Some(next_laser_position) = laser.next_position() {
+                    if let Some(token) = &mut self.cells[next_laser_position] {
+                        for new_laser_direction in token
+                            .outbound_lasers_given_inbound_laser_direction(&laser.orientation)
+                            .into_iter()
+                            .flatten()
+                        {
                             new_lasers[new_laser_index] = Some(ActiveLaser {
                                 slot_index: next_laser_position,
-                                orientation: laser.orientation.clone(),
+                                orientation: new_laser_direction,
                             });
                             new_laser_index += 1;
                         }
+                    } else {
+                        new_lasers[new_laser_index] = Some(ActiveLaser {
+                            slot_index: next_laser_position,
+                            orientation: laser.orientation.clone(),
+                        });
+                        new_laser_index += 1;
                     }
                 }
             }
