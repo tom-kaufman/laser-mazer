@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 use std::thread;
 use std::time;
 
@@ -95,13 +95,13 @@ impl LaserMazeSolver {
         true
     }
 
-    fn solver_thread(&self) -> thread::JoinHandle<Option<[Option<Token>; 25]>> {
+    fn solver_thread(&self, result_found: Arc<AtomicBool>) -> thread::JoinHandle<Option<[Option<Token>; 25]>> {
         let stack = Arc::clone(&self.dfs_stack);
         thread::spawn(move || {
             loop {
                 // get the lock on the Mutex, then exit the loop if stack is empty or pop a node
                 let mut vec = stack.lock().unwrap();
-                if vec.is_empty() {
+                if vec.is_empty() || result_found.load(Ordering::Acquire) {
                     break;
                 }
                 let mut node = vec
@@ -119,6 +119,7 @@ impl LaserMazeSolver {
                 // if new_nodes is not empty, we push the new items on the stack and don't check solution
                 if new_nodes.is_empty() {
                     if node.clone().check() {
+                        result_found.store(true, Ordering::Release);
                         return Some(node.clone_cells());
                     }
                 } else {
@@ -135,9 +136,10 @@ impl LaserMazeSolver {
     pub fn solve(&mut self, n_threads: usize) -> Option<[Option<Token>; 25]> {
         self.validate();
 
+        let result_found = Arc::new(AtomicBool::new(false));
         let mut threads = vec![];
         for _ in 0..n_threads {
-            threads.push(self.solver_thread());
+            threads.push(self.solver_thread(result_found.clone()));
         }
 
         for thread in threads {
