@@ -142,7 +142,9 @@ impl LaserMazeSolver {
     /// returns None if no solution, or a grid of tokens if a solution is found
     #[allow(dead_code)]
     pub fn solve_multi_thread(&mut self, n_threads: usize) -> Option<[Option<Token>; 25]> {
-        self.validate();
+        if !self.validate() {
+            panic!("invalid challenge");
+        }
 
         let result_found = Arc::new(AtomicBool::new(false));
         let mut threads = vec![];
@@ -161,7 +163,9 @@ impl LaserMazeSolver {
 
     #[allow(dead_code)]
     pub fn solve_single_thread(&mut self) -> Option<[Option<Token>; 25]> {
-        self.validate();
+        if !self.validate() {
+            panic!("invalid challenge");
+        }
 
         // get the stack out of the Arc<Mutex<>>
         let mut stack = self.dfs_stack.lock().unwrap().clone();
