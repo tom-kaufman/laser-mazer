@@ -58,7 +58,7 @@ impl Token {
     pub fn outbound_lasers_given_inbound_laser_direction(
         &mut self,
         laser_inbound_orientation: &Orientation,
-    ) -> Vec<Orientation> {
+    ) -> [Option<Orientation>; 2] {
         let reoriented_direction = self
             .orientation
             .as_mut()
@@ -66,15 +66,19 @@ impl Token {
             .reorient_inbound_laser(laser_inbound_orientation);
         let mut reoriented_outbound_lasers =
             self.reference_outbound_lasers_given_inbound_laser_direction(reoriented_direction);
-        for outbound_laser in &mut reoriented_outbound_lasers {
-            *outbound_laser = self
-                .orientation
-                .as_mut()
-                .expect("Called check() with tokens still not having orientation set")
-                .reorient_outbound_laser(&outbound_laser);
+        let mut outbound_lasers = [None, None];
+        for i in 0..2 {
+            if let Some(laser) = &reoriented_outbound_lasers[i] {
+                outbound_lasers[i] = Some(
+                    self.orientation
+                        .as_ref()
+                        .expect("Called check() with tokens still not having orientation set")
+                        .reorient_outbound_laser(&laser),
+                );
+            }
         }
 
-        reoriented_outbound_lasers
+        outbound_lasers
     }
 
     // uses reference orientation for each piece to calculate its interaction with an inbound laser
@@ -82,46 +86,46 @@ impl Token {
     fn reference_outbound_lasers_given_inbound_laser_direction(
         &mut self,
         laser_inbound_orientation: Orientation,
-    ) -> Vec<Orientation> {
+    ) -> [Option<Orientation>; 2] {
         match self.type_ {
             TokenType::Laser => match laser_inbound_orientation {
-                _ => vec![Orientation::North],
+                _ => [Some(Orientation::North), None],
             },
 
             TokenType::Checkpoint => {
                 self.lit = true;
                 match laser_inbound_orientation {
                     Orientation::North | Orientation::South => {
-                        vec![laser_inbound_orientation]
+                        [Some(laser_inbound_orientation), None]
                     }
-                    Orientation::West | Orientation::East => vec![],
+                    Orientation::West | Orientation::East => [None, None],
                 }
             }
 
             TokenType::TargetMirror => {
                 self.lit = true;
                 match laser_inbound_orientation {
-                    Orientation::North => vec![Orientation::West],
-                    Orientation::West => vec![],
+                    Orientation::North => [Some(Orientation::West), None],
+                    Orientation::West => [None, None],
                     Orientation::South => {
                         self.target_lit = Some(true);
-                        vec![]
+                        [None, None]
                     }
-                    Orientation::East => vec![Orientation::South],
+                    Orientation::East => [Some(Orientation::South), None],
                 }
             }
 
             TokenType::DoubleMirror => {
                 self.lit = true;
                 match laser_inbound_orientation {
-                    Orientation::North => vec![Orientation::West],
-                    Orientation::West => vec![Orientation::North],
-                    Orientation::South => vec![Orientation::East],
-                    Orientation::East => vec![Orientation::South],
+                    Orientation::North => [Some(Orientation::West), None],
+                    Orientation::West => [Some(Orientation::North), None],
+                    Orientation::South => [Some(Orientation::East), None],
+                    Orientation::East => [Some(Orientation::South), None],
                 }
             }
 
-            TokenType::CellBlocker => vec![laser_inbound_orientation],
+            TokenType::CellBlocker => [Some(laser_inbound_orientation), None],
 
             TokenType::BeamSplitter => {
                 self.lit = true;
@@ -130,16 +134,16 @@ impl Token {
                     // in this match statement, the item[0] acts just like the blue double mirror piece
                     // while item[1] is the transmitted beam
                     Orientation::North => {
-                        vec![Orientation::West, laser_inbound_orientation]
+                        [Some(Orientation::West), Some(laser_inbound_orientation)]
                     }
                     Orientation::West => {
-                        vec![Orientation::North, laser_inbound_orientation]
+                        [Some(Orientation::North), Some(laser_inbound_orientation)]
                     }
                     Orientation::South => {
-                        vec![Orientation::East, laser_inbound_orientation]
+                        [Some(Orientation::East), Some(laser_inbound_orientation)]
                     }
                     Orientation::East => {
-                        vec![Orientation::South, laser_inbound_orientation]
+                        [Some(Orientation::South), Some(laser_inbound_orientation)]
                     }
                 }
             }

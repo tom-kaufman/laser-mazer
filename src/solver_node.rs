@@ -79,7 +79,7 @@ impl SolverNode {
     }
 
     fn has_active_lasers(&self) -> bool {
-        self.active_lasers.iter().any(|laser| { laser.is_some() })
+        self.active_lasers.iter().any(|laser| laser.is_some())
     }
 
     pub fn check(mut self) -> bool {
@@ -96,12 +96,22 @@ impl SolverNode {
                     // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
                     if let Some(next_laser_position) = laser.next_position() {
                         if let Some(token) = &mut self.cells[next_laser_position] {
-                                for new_laser_direction in token.outbound_lasers_given_inbound_laser_direction(&laser.orientation) {
-                                new_lasers[new_laser_index] = Some(ActiveLaser { slot_index: next_laser_position, orientation: new_laser_direction });
-                                new_laser_index += 1;
+                            for new_laser_direction in token
+                                .outbound_lasers_given_inbound_laser_direction(&laser.orientation)
+                            {
+                                if let Some(new_laser_direction) = new_laser_direction {
+                                    new_lasers[new_laser_index] = Some(ActiveLaser {
+                                        slot_index: next_laser_position,
+                                        orientation: new_laser_direction,
+                                    });
+                                    new_laser_index += 1;
                                 }
+                            }
                         } else {
-                            new_lasers[new_laser_index] = Some(ActiveLaser { slot_index: next_laser_position, orientation: laser.orientation.clone() });
+                            new_lasers[new_laser_index] = Some(ActiveLaser {
+                                slot_index: next_laser_position,
+                                orientation: laser.orientation.clone(),
+                            });
                             new_laser_index += 1;
                         }
                     }
