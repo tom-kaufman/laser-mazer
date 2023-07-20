@@ -128,7 +128,7 @@ impl SolverNode {
             .iter()
             .filter(|cell| {
                 if let Some(token) = cell {
-                    token.target_lit().unwrap_or_else(|| false)
+                    token.target_lit().unwrap_or(false)
                 } else {
                     false
                 }

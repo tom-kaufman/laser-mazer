@@ -54,7 +54,7 @@ impl LaserMazeSolver {
         for cell in &self.initial_grid_config {
             if let Some(token) = cell {
                 token_counts
-                    .entry(token.type_().clone())
+                    .entry(*token.type_())
                     .and_modify(|counter| *counter += 1)
                     .or_insert(1);
             }
@@ -62,7 +62,7 @@ impl LaserMazeSolver {
         // count pieces to be added
         for token in &self.tokens_to_be_added {
             token_counts
-                .entry(token.type_().clone())
+                .entry(*token.type_())
                 .and_modify(|counter| *counter += 1)
                 .or_insert(1);
         }

@@ -64,7 +64,7 @@ impl Token {
             .as_mut()
             .expect("Called check() with tokens still not having orientation set")
             .reorient_inbound_laser(laser_inbound_orientation);
-        let mut reoriented_outbound_lasers =
+        let reoriented_outbound_lasers =
             self.reference_outbound_lasers_given_inbound_laser_direction(reoriented_direction);
         let mut outbound_lasers = [None, None];
         for i in 0..2 {
@@ -73,7 +73,7 @@ impl Token {
                     self.orientation
                         .as_ref()
                         .expect("Called check() with tokens still not having orientation set")
-                        .reorient_outbound_laser(&laser),
+                        .reorient_outbound_laser(laser),
                 );
             }
         }
@@ -88,9 +88,7 @@ impl Token {
         laser_inbound_orientation: Orientation,
     ) -> [Option<Orientation>; 2] {
         match self.type_ {
-            TokenType::Laser => match laser_inbound_orientation {
-                _ => [Some(Orientation::North), None],
-            },
+            TokenType::Laser => [Some(Orientation::North), None],
 
             TokenType::Checkpoint => {
                 self.lit = true;

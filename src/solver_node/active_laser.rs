@@ -28,7 +28,7 @@ impl ActiveLaser {
             // if we're not on the bottom row, decrement index by 5
             Orientation::South => {
                 if self.slot_index <= 4 {
-                    return None;
+                    None
                 } else {
                     Some(self.slot_index - 5)
                 }
