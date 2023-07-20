@@ -1,6 +1,6 @@
 # How many possible GameBoard configurations are there?
 - 12 game pieces; any # from 2-12 pieces may be included; actual # pieces in puzzle = `N`
-- 25 slots, all `N` pieces must be placed -> `25! / (25 - N)!`
+- 25 cells, all `N` pieces must be placed -> `25! / (25 - N)!`
 - each piece may have 4 rotations, for N pieces, there are `4^N` rotation configurations
 - so, `summation on [2, 12] { 4^N * 25! / (25 - N)! }` yields 4.255014734672012e+22
 

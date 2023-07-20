@@ -183,13 +183,13 @@ impl LaserMazeSolver {
 }
 
 fn main() {
-    let mut slots: [Option<Token>; 25] = Default::default();
+    let mut cells: [Option<Token>; 25] = Default::default();
 
-    slots[3] = Some(Token::new(TokenType::TargetMirror, None, true));
-    slots[7] = Some(Token::new(TokenType::Checkpoint, None, false));
-    slots[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
-    slots[20] = Some(Token::new(TokenType::Laser, None, false));
-    slots[23] = Some(Token::new(
+    cells[3] = Some(Token::new(TokenType::TargetMirror, None, true));
+    cells[7] = Some(Token::new(TokenType::Checkpoint, None, false));
+    cells[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
+    cells[20] = Some(Token::new(TokenType::Laser, None, false));
+    cells[23] = Some(Token::new(
         TokenType::CellBlocker,
         Some(Orientation::East),
         false,
@@ -200,7 +200,7 @@ fn main() {
         Token::new(TokenType::DoubleMirror, None, false),
     ];
 
-    let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+    let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
 
     let t0 = time::Instant::now();
     let result = solver.solve_single_thread();
@@ -222,68 +222,68 @@ mod test {
     //       \\ -- |/
     #[test]
     fn test_checker_all_tokens() {
-        let mut slots: [Option<Token>; 25] = Default::default();
+        let mut cells: [Option<Token>; 25] = Default::default();
 
         // laser in top right
-        slots[24] = Some(Token::new(TokenType::Laser, Some(Orientation::West), false));
+        cells[24] = Some(Token::new(TokenType::Laser, Some(Orientation::West), false));
 
-        // splitting mirror piece on center col, top row slot
-        slots[22] = Some(Token::new(
+        // splitting mirror piece on center col, top row cell
+        cells[22] = Some(Token::new(
             TokenType::BeamSplitter,
             Some(Orientation::East),
             false,
         ));
 
-        // target 1: top left slot, target facing east
-        slots[20] = Some(Token::new(
+        // target 1: top left cell, target facing east
+        cells[20] = Some(Token::new(
             TokenType::TargetMirror,
             Some(Orientation::East),
             false,
         ));
 
         // gate piece, middle col  row[3]
-        slots[17] = Some(Token::new(
+        cells[17] = Some(Token::new(
             TokenType::Checkpoint,
             Some(Orientation::South),
             false,
         ));
 
         // block piece, true center
-        slots[12] = Some(Token::new(
+        cells[12] = Some(Token::new(
             TokenType::CellBlocker,
             Some(Orientation::West),
             false,
         ));
 
-        // splitting mirror piece on center col, row[1] slot
-        slots[7] = Some(Token::new(
+        // splitting mirror piece on center col, row[1] cell
+        cells[7] = Some(Token::new(
             TokenType::BeamSplitter,
             Some(Orientation::East),
             false,
         ));
 
-        // double mirror piece on bottom middle slot, facing south
-        slots[2] = Some(Token::new(
+        // double mirror piece on bottom middle cell, facing south
+        cells[2] = Some(Token::new(
             TokenType::DoubleMirror,
             Some(Orientation::South),
             false,
         ));
 
-        // target 2: left col, row[1] slot, facing east
-        slots[5] = Some(Token::new(
+        // target 2: left col, row[1] cell, facing east
+        cells[5] = Some(Token::new(
             TokenType::TargetMirror,
             Some(Orientation::East),
             false,
         ));
 
-        // target 3: bottom right slot, facing west
-        slots[4] = Some(Token::new(
+        // target 3: bottom right cell, facing west
+        cells[4] = Some(Token::new(
             TokenType::TargetMirror,
             Some(Orientation::West),
             false,
         ));
 
-        let solver = LaserMazeSolver::new(slots, vec![], 3);
+        let solver = LaserMazeSolver::new(cells, vec![], 3);
         let mut solver_node = solver.dfs_stack.lock().unwrap();
         let result = solver_node
             .pop()
@@ -294,19 +294,19 @@ mod test {
 
     #[test]
     fn test_solver_simple() {
-        let mut slots: [Option<Token>; 25] = Default::default();
+        let mut cells: [Option<Token>; 25] = Default::default();
 
-        slots[0] = Some(Token::new(
+        cells[0] = Some(Token::new(
             TokenType::Laser,
             Some(Orientation::North),
             false,
         ));
-        slots[6] = Some(Token::new(
+        cells[6] = Some(Token::new(
             TokenType::TargetMirror,
             Some(Orientation::West),
             true,
         ));
-        slots[10] = Some(Token::new(
+        cells[10] = Some(Token::new(
             TokenType::TargetMirror,
             Some(Orientation::South),
             false,
@@ -315,7 +315,7 @@ mod test {
         let mut tokens_to_be_added = vec![];
         tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
 
-        let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
 
         let t0 = time::Instant::now();
         let result = solver.solve_multi_thread(16);
@@ -327,13 +327,13 @@ mod test {
 
     #[test]
     fn test_solver_puzzle_25_par() {
-        let mut slots: [Option<Token>; 25] = Default::default();
+        let mut cells: [Option<Token>; 25] = Default::default();
 
-        slots[3] = Some(Token::new(TokenType::TargetMirror, None, true));
-        slots[7] = Some(Token::new(TokenType::Checkpoint, None, false));
-        slots[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
-        slots[20] = Some(Token::new(TokenType::Laser, None, false));
-        slots[23] = Some(Token::new(
+        cells[3] = Some(Token::new(TokenType::TargetMirror, None, true));
+        cells[7] = Some(Token::new(TokenType::Checkpoint, None, false));
+        cells[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
+        cells[20] = Some(Token::new(TokenType::Laser, None, false));
+        cells[23] = Some(Token::new(
             TokenType::CellBlocker,
             Some(Orientation::East),
             false,
@@ -343,7 +343,7 @@ mod test {
         tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, true));
         tokens_to_be_added.push(Token::new(TokenType::DoubleMirror, None, false));
 
-        let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
 
         let t0 = time::Instant::now();
         let result = solver.solve_multi_thread(1);
@@ -355,13 +355,13 @@ mod test {
 
     #[test]
     fn test_solver_puzzle_25_st() {
-        let mut slots: [Option<Token>; 25] = Default::default();
+        let mut cells: [Option<Token>; 25] = Default::default();
 
-        slots[3] = Some(Token::new(TokenType::TargetMirror, None, true));
-        slots[7] = Some(Token::new(TokenType::Checkpoint, None, false));
-        slots[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
-        slots[20] = Some(Token::new(TokenType::Laser, None, false));
-        slots[23] = Some(Token::new(
+        cells[3] = Some(Token::new(TokenType::TargetMirror, None, true));
+        cells[7] = Some(Token::new(TokenType::Checkpoint, None, false));
+        cells[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
+        cells[20] = Some(Token::new(TokenType::Laser, None, false));
+        cells[23] = Some(Token::new(
             TokenType::CellBlocker,
             Some(Orientation::East),
             false,
@@ -371,7 +371,7 @@ mod test {
         tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, true));
         tokens_to_be_added.push(Token::new(TokenType::DoubleMirror, None, false));
 
-        let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
 
         let t0 = time::Instant::now();
         let result = solver.solve_single_thread();

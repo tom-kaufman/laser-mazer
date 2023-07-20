@@ -62,7 +62,7 @@ impl SolverNode {
                         let mut new_node = self.clone();
                         new_node.cells[i]
                             .as_mut()
-                            .expect("We just validated there is a token in this slot")
+                            .expect("We just validated there is a token in this cell")
                             .orientation = Some(Orientation::from_index(x));
                         result.push(new_node);
                     }
@@ -101,14 +101,14 @@ impl SolverNode {
                             .flatten()
                         {
                             new_lasers[new_laser_index] = Some(ActiveLaser {
-                                slot_index: next_laser_position,
+                                cell_index: next_laser_position,
                                 orientation: new_laser_direction,
                             });
                             new_laser_index += 1;
                         }
                     } else {
                         new_lasers[new_laser_index] = Some(ActiveLaser {
-                            slot_index: next_laser_position,
+                            cell_index: next_laser_position,
                             orientation: laser.orientation.clone(),
                         });
                         new_laser_index += 1;
@@ -169,7 +169,7 @@ impl SolverNode {
                             .orientation()
                             .expect("Tried running checker on piece without orientation set")
                             .clone(),
-                        slot_index: i,
+                        cell_index: i,
                     };
                     self.active_lasers[0] = Some(initial_active_laser);
                     return;
