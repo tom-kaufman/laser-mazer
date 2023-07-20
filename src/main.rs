@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time;
 
 mod orientation;
 use orientation::Orientation;
@@ -152,7 +153,30 @@ impl LaserMazeSolver {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut slots: [Option<Token>; 25] = Default::default();
+
+    slots[3] = Some(Token::new(TokenType::TargetMirror, None, true));
+    slots[7] = Some(Token::new(TokenType::Checkpoint, None, false));
+    slots[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
+    slots[20] = Some(Token::new(TokenType::Laser, None, false));
+    slots[23] = Some(Token::new(
+        TokenType::CellBlocker,
+        Some(Orientation::East),
+        false,
+    ));
+
+    let mut tokens_to_be_added = vec![];
+    tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, true));
+    tokens_to_be_added.push(Token::new(TokenType::DoubleMirror, None, false));
+
+    let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+
+    let t0 = time::Instant::now();
+    let result = solver.solve(16);
+    let t1 = time::Instant::now();
+
+    println!("{:?}", result.unwrap());
+    println!("Processed in {:?}", t1 - t0);
 }
 
 #[cfg(test)]
