@@ -4,6 +4,7 @@ use crate::{
 };
 mod active_laser;
 use active_laser::ActiveLaser;
+use lazy_static::lazy_static;
 
 #[derive(Clone, Default, Debug)]
 pub struct SolverNode {
@@ -39,11 +40,10 @@ impl SolverNode {
     fn generate_token_placement_branches(&mut self) -> Vec<Self> {
         if let Some(token) = self.tokens_to_be_added.pop() {
             let mut result = vec![];
-            // TODO HEURISTIC use spiral order
-            for i in 0..25 {
-                if self.cells[i].is_none() {
+            for i in SPIRAL_ORDER.iter() {
+                if self.cells[*i].is_none() {
                     let mut new_node = self.clone();
-                    new_node.cells[i] = Some(token.clone());
+                    new_node.cells[*i] = Some(token.clone());
                     result.push(new_node)
                 }
             }
@@ -177,6 +177,14 @@ impl SolverNode {
             }
         }
     }
+}
+
+lazy_static! {
+    static ref SPIRAL_ORDER: [usize; 25] = [
+        0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5,
+        6, 7, 8, 13, 18, 17, 16, 11,
+        12,
+    ];
 }
 
 #[cfg(test)]
