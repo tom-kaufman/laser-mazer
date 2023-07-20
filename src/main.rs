@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::collections::HashMap;
 
 mod orientation;
 use orientation::Orientation;
@@ -9,8 +9,7 @@ use token::{Token, TokenType};
 mod solver_node;
 use solver_node::SolverNode;
 
-
-/// LaserMazeSolver: main struct. initialize this with the puzzle -> run .solve() 
+/// LaserMazeSolver: main struct. initialize this with the puzzle -> run .solve()
 /// initial_grid_config: initially, where the tokens are placed on the grid and their rotation
 /// tokens_to_be_added: the "add to grid" section of the card
 /// dfs_stack: an Arc<Mutex<SolverNode>>> that holds the thread-safe stack used by DFS algorithm
@@ -22,7 +21,11 @@ struct LaserMazeSolver {
 }
 
 impl LaserMazeSolver {
-    pub fn new(initial_grid_config: [Option<Token>; 25], tokens_to_be_added: Vec<Token>, targets: u8) -> Self {
+    pub fn new(
+        initial_grid_config: [Option<Token>; 25],
+        tokens_to_be_added: Vec<Token>,
+        targets: u8,
+    ) -> Self {
         let initial_solver_node = SolverNode::new(
             initial_grid_config.clone(),
             tokens_to_be_added.clone(),
@@ -31,7 +34,7 @@ impl LaserMazeSolver {
         Self {
             initial_grid_config,
             tokens_to_be_added,
-            targets,   
+            targets,
             dfs_stack: Arc::new(Mutex::new(vec![initial_solver_node])),
         }
     }
@@ -116,10 +119,7 @@ impl LaserMazeSolver {
                 // if new_nodes is still empty, we're at a leaf; check the puzzle and return a Some() if we find solution
                 // if new_nodes is not empty, we push the new items on the stack and don't check solution
                 if new_nodes.is_empty() {
-                    if node
-                        .clone()
-                        .check()
-                    {
+                    if node.clone().check() {
                         return Some(node.clone_cells());
                     }
                 } else {
@@ -129,7 +129,6 @@ impl LaserMazeSolver {
                 }
             }
             None
-
         })
     }
 
@@ -140,14 +139,14 @@ impl LaserMazeSolver {
         let mut threads = vec![];
         for _ in 0..n_threads {
             threads.push(self.solver_thread());
-        }            
+        }
 
         for thread in threads {
             if let Some(solution) = thread.join().unwrap() {
                 return Some(solution);
             }
         }
-        
+
         None
     }
 }
@@ -231,7 +230,10 @@ mod test {
 
         let solver = LaserMazeSolver::new(slots, vec![], 3);
         let mut solver_node = solver.dfs_stack.lock().unwrap();
-        let result = solver_node.pop().expect("LaserMazeSolver initializes with a node").check();
+        let result = solver_node
+            .pop()
+            .expect("LaserMazeSolver initializes with a node")
+            .check();
         assert!(result)
     }
 
@@ -259,13 +261,40 @@ mod test {
         tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
 
         let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
-        
+
         let t0 = time::Instant::now();
         let result = solver.solve(16);
         let t1 = time::Instant::now();
 
         println!("{:?}", result.unwrap());
         println!("Processed in {:?}", t1 - t0);
+    }
 
+    #[test]
+    fn test_solver_puzzle_25_par() {
+        let mut slots: [Option<Token>; 25] = Default::default();
+
+        slots[3] = Some(Token::new(TokenType::TargetMirror, None, true));
+        slots[7] = Some(Token::new(TokenType::Checkpoint, None, false));
+        slots[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
+        slots[20] = Some(Token::new(TokenType::Laser, None, false));
+        slots[23] = Some(Token::new(
+            TokenType::CellBlocker,
+            Some(Orientation::East),
+            false,
+        ));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, true));
+        tokens_to_be_added.push(Token::new(TokenType::DoubleMirror, None, false));
+
+        let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve(16);
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
     }
 }

@@ -1,4 +1,7 @@
-use crate::{token::{Token, TokenType}, orientation::Orientation};
+use crate::{
+    orientation::Orientation,
+    token::{Token, TokenType},
+};
 mod active_laser;
 use active_laser::ActiveLaser;
 
@@ -11,14 +14,17 @@ pub struct SolverNode {
     targets: u8,
 }
 
-
 impl SolverNode {
-    pub fn new(initial_grid_config: [Option<Token>; 25], tokens_to_be_added: Vec<Token>, targets: u8) -> Self {
+    pub fn new(
+        initial_grid_config: [Option<Token>; 25],
+        tokens_to_be_added: Vec<Token>,
+        targets: u8,
+    ) -> Self {
         Self {
             cells: initial_grid_config,
             tokens_to_be_added,
             targets,
-            ..Default::default()            
+            ..Default::default()
         }
     }
     pub fn generate_branches(&mut self) -> Vec<Self> {
@@ -54,7 +60,10 @@ impl SolverNode {
                     let mut result = vec![];
                     for x in 0..4 {
                         let mut new_node = self.clone();
-                        new_node.cells[i].as_mut().expect("We just validated there is a token in this slot").orientation = Some(Orientation::from_index(x));
+                        new_node.cells[i]
+                            .as_mut()
+                            .expect("We just validated there is a token in this slot")
+                            .orientation = Some(Orientation::from_index(x));
                         result.push(new_node);
                     }
                     return result;
@@ -150,9 +159,15 @@ impl SolverNode {
         for i in 0..25 {
             if let Some(token) = &self.cells[i] {
                 if token.type_() == &TokenType::Laser {
-                    self.laser_visited[i][token.orientation().expect("Tried running checker on piece without orientation set").to_index()] = true;
+                    self.laser_visited[i][token
+                        .orientation()
+                        .expect("Tried running checker on piece without orientation set")
+                        .to_index()] = true;
                     let initial_active_laser = ActiveLaser {
-                        orientation: token.orientation().expect("Tried running checker on piece without orientation set").clone(),
+                        orientation: token
+                            .orientation()
+                            .expect("Tried running checker on piece without orientation set")
+                            .clone(),
                         slot_index: i,
                     };
                     self.active_lasers.push(initial_active_laser);

@@ -1,17 +1,16 @@
-use crate::orientation::{Orientation, };
+use crate::orientation::Orientation;
 
 #[derive(Clone, Debug)]
 pub struct Token {
     type_: TokenType,
     pub orientation: Option<Orientation>,
-    pub lit: bool, 
+    pub lit: bool,
     target_lit: Option<bool>,
     must_light: bool,
 }
 
 impl Token {
     pub fn new(type_: TokenType, orientation: Option<Orientation>, must_light: bool) -> Self {
-
         let must_light = if type_ == TokenType::TargetMirror {
             must_light
         } else {
@@ -31,8 +30,8 @@ impl Token {
         Self {
             type_,
             orientation,
-            lit, 
-            target_lit, 
+            lit,
+            target_lit,
             must_light,
         }
     }
@@ -68,7 +67,11 @@ impl Token {
         let mut reoriented_outbound_lasers =
             self.reference_outbound_lasers_given_inbound_laser_direction(reoriented_direction);
         for outbound_laser in &mut reoriented_outbound_lasers {
-            *outbound_laser = self.orientation.as_mut().expect("Called check() with tokens still not having orientation set").reorient_outbound_laser(&outbound_laser);
+            *outbound_laser = self
+                .orientation
+                .as_mut()
+                .expect("Called check() with tokens still not having orientation set")
+                .reorient_outbound_laser(&outbound_laser);
         }
 
         reoriented_outbound_lasers

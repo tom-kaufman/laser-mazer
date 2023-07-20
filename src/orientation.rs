@@ -47,7 +47,6 @@ impl Orientation {
         let idx = (self_orientation_ordinal_value + offset) % 4;
         ORIENTATION_ORDER[idx].clone()
     }
-
 }
 
 lazy_static! {
