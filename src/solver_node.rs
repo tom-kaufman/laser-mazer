@@ -10,7 +10,7 @@ pub struct SolverNode {
     cells: [Option<Token>; 25],
     tokens_to_be_added: Vec<Token>,
     laser_visited: [[bool; 4]; 25],
-    active_lasers: Vec<ActiveLaser>,
+    active_lasers: [Option<ActiveLaser>; 3],
     targets: u8,
 }
 
@@ -78,43 +78,36 @@ impl SolverNode {
         self.cells.clone()
     }
 
+    fn has_active_lasers(&self) -> bool {
+        self.active_lasers.iter().any(|laser| { laser.is_some() })
+    }
+
     pub fn check(mut self) -> bool {
         self.initialize();
         // outer loop: keep cranking the laser states until there are no more lasers
-        while !self.active_lasers.is_empty() {
-            // println!("{:?}\n\n", &self.active_lasers);
-            // sanity check: only 3 lasers active at most
-            assert!(self.active_lasers.len() <= 3);
-            // inner loop: pop lasers and do some work on them until no more active lasers
-            let mut new_active_lasers = vec![];
-            while !self.active_lasers.is_empty() {
-                let laser = self
-                    .active_lasers
-                    .pop()
-                    .expect("We just checked the vec isn't empty");
-                // if the laser is still on the board after going to the next position, check for
-                // a token. if there's a token, do the interactions.
-                if let Some(next_laser_position) = laser.next_position() {
-                    // if the laser hits a new Token, calculate the results of the laser's interaction with the token
-                    // otherwise, just make a new active laser at this spot
-                    if let Some(token) = &mut self.cells[next_laser_position] {
-                        let new_laser_directions =
-                            token.outbound_lasers_given_inbound_laser_direction(&laser.orientation);
-                        for new_laser_direction in new_laser_directions {
-                            new_active_lasers.push(ActiveLaser {
-                                slot_index: next_laser_position,
-                                orientation: new_laser_direction,
-                            });
+        while self.has_active_lasers() {
+            // inner loop: iterate on lasers and do some work on Some()s until no more active lasers
+            let mut new_laser_index = 0;
+            let mut new_lasers = [None, None, None];
+            for laser in self.active_lasers {
+                if let Some(laser) = laser {
+                    // if the laser is still on the board after going to the next position, check for
+                    // a token. if there's a token, do the interactions.
+                    // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
+                    if let Some(next_laser_position) = laser.next_position() {
+                        if let Some(token) = &mut self.cells[next_laser_position] {
+                                for new_laser_direction in token.outbound_lasers_given_inbound_laser_direction(&laser.orientation) {
+                                new_lasers[new_laser_index] = Some(ActiveLaser { slot_index: next_laser_position, orientation: new_laser_direction });
+                                new_laser_index += 1;
+                                }
+                        } else {
+                            new_lasers[new_laser_index] = Some(ActiveLaser { slot_index: next_laser_position, orientation: laser.orientation.clone() });
+                            new_laser_index += 1;
                         }
-                    } else {
-                        new_active_lasers.push(ActiveLaser {
-                            slot_index: next_laser_position,
-                            orientation: laser.orientation.clone(),
-                        })
                     }
                 }
             }
-            self.active_lasers.extend(new_active_lasers);
+            self.active_lasers = new_lasers;
         }
 
         self.targets == self.count_lit_targets() && self.all_required_targets_lit()
@@ -170,7 +163,7 @@ impl SolverNode {
                             .clone(),
                         slot_index: i,
                     };
-                    self.active_lasers.push(initial_active_laser);
+                    self.active_lasers[0] = Some(initial_active_laser);
                     return;
                 }
             }
