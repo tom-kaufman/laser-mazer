@@ -1,5 +1,8 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, Mutex,
+};
 use std::thread;
 use std::time;
 
@@ -95,7 +98,11 @@ impl LaserMazeSolver {
         true
     }
 
-    fn solver_thread(&self, result_found: Arc<AtomicBool>) -> thread::JoinHandle<Option<[Option<Token>; 25]>> {
+    #[allow(dead_code)]
+    fn solver_thread(
+        &self,
+        result_found: Arc<AtomicBool>,
+    ) -> thread::JoinHandle<Option<[Option<Token>; 25]>> {
         let stack = Arc::clone(&self.dfs_stack);
         thread::spawn(move || {
             loop {
@@ -133,7 +140,8 @@ impl LaserMazeSolver {
     }
 
     /// returns None if no solution, or a grid of tokens if a solution is found
-    pub fn solve(&mut self, n_threads: usize) -> Option<[Option<Token>; 25]> {
+    #[allow(dead_code)]
+    pub fn solve_multi_thread(&mut self, n_threads: usize) -> Option<[Option<Token>; 25]> {
         self.validate();
 
         let result_found = Arc::new(AtomicBool::new(false));
@@ -145,6 +153,28 @@ impl LaserMazeSolver {
         for thread in threads {
             if let Some(solution) = thread.join().unwrap() {
                 return Some(solution);
+            }
+        }
+
+        None
+    }
+
+    #[allow(dead_code)]
+    pub fn solve_single_thread(&mut self) -> Option<[Option<Token>; 25]> {
+        self.validate();
+
+        // get the stack out of the Arc<Mutex<>>
+        let mut stack = self.dfs_stack.lock().unwrap().clone();
+
+        while !stack.is_empty() {
+            let mut node = stack.pop().expect("loop criteria is non-empty vec");
+            let new_nodes = node.generate_branches();
+            if new_nodes.is_empty() {
+                if node.clone().check() {
+                    return Some(node.clone_cells());
+                }
+            } else {
+                stack.extend(new_nodes);
             }
         }
 
@@ -173,7 +203,7 @@ fn main() {
     let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
 
     let t0 = time::Instant::now();
-    let result = solver.solve(16);
+    let result = solver.solve_single_thread();
     let t1 = time::Instant::now();
 
     println!("{:?}", result.unwrap());
@@ -288,7 +318,7 @@ mod test {
         let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
 
         let t0 = time::Instant::now();
-        let result = solver.solve(16);
+        let result = solver.solve_multi_thread(16);
         let t1 = time::Instant::now();
 
         println!("{:?}", result.unwrap());
@@ -316,7 +346,35 @@ mod test {
         let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
 
         let t0 = time::Instant::now();
-        let result = solver.solve(16);
+        let result = solver.solve_multi_thread(1);
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
+
+    #[test]
+    fn test_solver_puzzle_25_st() {
+        let mut slots: [Option<Token>; 25] = Default::default();
+
+        slots[3] = Some(Token::new(TokenType::TargetMirror, None, true));
+        slots[7] = Some(Token::new(TokenType::Checkpoint, None, false));
+        slots[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
+        slots[20] = Some(Token::new(TokenType::Laser, None, false));
+        slots[23] = Some(Token::new(
+            TokenType::CellBlocker,
+            Some(Orientation::East),
+            false,
+        ));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, true));
+        tokens_to_be_added.push(Token::new(TokenType::DoubleMirror, None, false));
+
+        let mut solver = LaserMazeSolver::new(slots, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve_single_thread();
         let t1 = time::Instant::now();
 
         println!("{:?}", result.unwrap());
