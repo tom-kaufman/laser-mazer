@@ -1,4 +1,5 @@
 use crate::orientation::Orientation;
+use std::ops;
 
 #[derive(Clone, Debug)]
 pub struct Token {
@@ -145,6 +146,16 @@ impl Token {
                     }
                 }
             }
+        }
+    }
+
+    pub fn orientation_range(&self) -> ops::Range<usize> {
+        match self.type_ {
+            TokenType::BeamSplitter => 0..2,
+            TokenType::DoubleMirror => 0..2,
+            TokenType::Checkpoint => 0..2,
+            TokenType::CellBlocker => 0..1,
+            _ => 0..4,
         }
     }
 }

@@ -58,7 +58,7 @@ impl SolverNode {
             if let Some(token) = &self.cells[i] {
                 if token.orientation().is_none() {
                     let mut result = vec![];
-                    for x in 0..4 {
+                    for x in token.orientation_range() {
                         let mut new_node = self.clone();
                         new_node.cells[i]
                             .as_mut()
@@ -181,9 +181,7 @@ impl SolverNode {
 
 lazy_static! {
     static ref SPIRAL_ORDER: [usize; 25] = [
-        0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5,
-        6, 7, 8, 13, 18, 17, 16, 11,
-        12,
+        0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5, 6, 7, 8, 13, 18, 17, 16, 11, 12,
     ];
 }
 
