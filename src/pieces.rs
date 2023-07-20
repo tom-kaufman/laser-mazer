@@ -207,7 +207,7 @@ impl Orientation {
     }
 
     /// + is CW, 0 is North
-    fn ordinal_value(&self) -> usize {
+    pub fn ordinal_value(&self) -> usize {
         match self {
             Self::North => 0,
             Self::East => 1,

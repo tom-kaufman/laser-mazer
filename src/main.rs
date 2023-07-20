@@ -13,7 +13,7 @@ struct Slot {
     #[serde(skip_serializing_if = "Option::is_none")]
     occupying_game_piece: Option<GamePiece>,
     #[serde(skip)]
-    active_laser_directions: HashMap<Orientation, bool>,
+    active_laser_directions: [bool; 4],
     #[serde(skip)]
     position_index: u8,
     #[serde(skip)]
@@ -22,13 +22,9 @@ struct Slot {
 
 impl Slot {
     fn new(position_index: u8) -> Self {
-        let mut active_laser_directions: HashMap<Orientation, bool> = HashMap::new();
-        for orientation in ORIENTATION_ORDER.iter() {
-            active_laser_directions.insert(orientation.clone(), false);
-        }
         Self {
             occupying_game_piece: None,
-            active_laser_directions,
+            active_laser_directions: [false, false, false, false],
             position_index,
             position: Slot::position_from_index(position_index),
         }
@@ -160,12 +156,10 @@ impl GameBoard {
             .map(|slot| {
                 if let Some(piece) = &slot.occupying_game_piece {
                     if piece.get_piece_type() == PieceType::Laser {
-                        *slot
-                            .active_laser_directions
-                            .get_mut(&piece.get_orientation().expect(
-                                "method shouldn't be called if all orientations are not set",
-                            ))
-                            .unwrap() = true;
+                        slot.active_laser_directions[piece
+                            .get_orientation()
+                            .expect("method shouldn't be called if all orientations are not set")
+                            .ordinal_value()] = true;
                         self.laser_positions[0] = Some(LaserPosition::new(
                             slot.position_index,
                             piece.get_orientation().expect(
@@ -226,30 +220,52 @@ impl GameBoard {
                     {
                         // println!("Marching the laser forward, it's now at slot index {}", neighboring_slot_index);
                         // the next slot in the laser's path is on the board
-                        let neighboring_slot_active_direction = self.slots.get_mut(neighboring_slot_index as usize).expect("we just validated that we are on the board").active_laser_directions.get_mut(&laser_position.orientation).expect("this hashmap is populated with all the keys from the Orientation enum");
+                        let neighboring_slot_active_direction = &mut self
+                            .slots
+                            .get_mut(neighboring_slot_index as usize)
+                            .expect("we just validated that we are on the board")
+                            .active_laser_directions[laser_position.orientation.ordinal_value()];
                         if *neighboring_slot_active_direction {
                             return [None, None];
                         }
                         // the laser hasn't traveled over this slot in this direction yet
                         *neighboring_slot_active_direction = true;
 
-                        if let Some(neighboring_piece) = self.slots.get_mut(neighboring_slot_index as usize).expect("we just validated that we are on the board").occupying_game_piece.as_mut() {
+                        if let Some(neighboring_piece) = self
+                            .slots
+                            .get_mut(neighboring_slot_index as usize)
+                            .expect("we just validated that we are on the board")
+                            .occupying_game_piece
+                            .as_mut()
+                        {
                             // the laser has hit a piece, we need to calculate the result
                             // println!("The laser has hit a piece of type {:?}", neighboring_piece.get_piece_type());
-                            let returned_orientations = neighboring_piece.outbound_lasers_given_inbound_laser_direction(laser_position.orientation);
+                            let returned_orientations = neighboring_piece
+                                .outbound_lasers_given_inbound_laser_direction(
+                                    laser_position.orientation,
+                                );
                             // println!("After hitting the piece, the laser became these orientations: {:?}", returned_orientations);
                             let mut result = [None, None];
                             for i in 0..2 {
                                 if let Some(orientation) = returned_orientations[i] {
-                                    result[i] = Some(LaserPosition::new(neighboring_slot_index, orientation));
+                                    result[i] = Some(LaserPosition::new(
+                                        neighboring_slot_index,
+                                        orientation,
+                                    ));
                                 }
                             }
                             // println!("Reconstructed those orientations into these laser positions: {:?}", result);
-                            return result
+                            return result;
                         } else {
                             // the laser hasn't hit a piece
                             // println!("The laser hasn't hit a piece, it's now over index {neighboring_slot_index} with orientation {:?}", laser_position.orientation);
-                            return [Some(LaserPosition::new(neighboring_slot_index, laser_position.orientation)), None]
+                            return [
+                                Some(LaserPosition::new(
+                                    neighboring_slot_index,
+                                    laser_position.orientation,
+                                )),
+                                None,
+                            ];
                         }
                     }
                 }
@@ -930,7 +946,7 @@ mod test {
         };
 
         let t0 = time::Instant::now();
-        let result = puzzle.clone().dfs_par(100);
+        let result = puzzle.clone().dfs_par(16);
         let t1 = time::Instant::now();
         println!("Result: {:?}; elapsed: {:?}", result, t1 - t0);
         assert!(result.is_some());
