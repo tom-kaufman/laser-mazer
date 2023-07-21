@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Orientation {
     North,
     East,
