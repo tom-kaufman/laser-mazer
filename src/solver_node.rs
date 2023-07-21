@@ -286,6 +286,7 @@ impl SolverNode {
     }
 
     // returns an array representing the out-of-board orientations
+    // TODO this should also check for neighboring pieces which block the laser path (i.e. checkpoint feeding into the wall of a target)
     fn forbidden_orientations(&self, cell_index: usize) -> [Option<Orientation>; 2] {
         // the center cannot be considered an edge piece, regardless of the cell blocker's location
         if cell_index == 12 {

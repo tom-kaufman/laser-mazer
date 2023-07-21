@@ -5,12 +5,7 @@
 - so, `summation on [2, 12] { 4^N * 25! / (25 - N)! }` yields 4.255014734672012e+22
 
 
-# Thoughts on a solving algorithm
-- use a tree to track solutions already checked
-    - first level of tree will be the orientations of the given, rotatable pieces
-    - second level of tree will be the valid configurations for adding placeable pieces
-    - third level will be the configurations of pieces placed at those placeable positions
-    - last level will be the rotations of the placed pieces
+# 
 - for choosing rotations of pieces near the edge of the board:
     - gate pieces never point outside of the board
     - check single mirror pieces for if their targets are pointing outside of the board; need at least `N` targets available pointing into the board
@@ -26,9 +21,3 @@
 			
     - splitting mirror pieces never go on corners
     - gate pieces never go on corners
-
-
-# Rewrite Plan
-1. Rewrite a clean implementation of structs: `Puzzle`, `GameBoard`, `GamePiece`. These structs will be "human usable".
-2. Create a compressed representation `Puzzle` that will be used for DFS. Implement `From` trait for `Puzzle` into `TinyPuzzle` and vice versa
-3. Write methods on `TinyPuzzle` in such a way that the branch pruning is easily read and modified (how?)

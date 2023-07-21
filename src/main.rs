@@ -95,7 +95,45 @@ impl LaserMazeSolver {
             println!("Invalid number of pieces which must be lit!");
             return false;
         }
+
+        // no cell blocker in tokens to be added
+        if self
+            .tokens_to_be_added
+            .iter()
+            .any(|token| token.type_() == &TokenType::CellBlocker)
+        {
+            println!("Cell Blocker included in tokens_to_be_added!");
+            return false;
+        }
+
         true
+    }
+
+    // initialize some things (for now, just sort the pieces to be added heuristically)
+    fn initialize(&mut self) {
+        // sort the tokens to be added
+        let reference_order = [
+            // the first 3 have more heuristics
+            TokenType::Laser,
+            TokenType::TargetMirror,
+            TokenType::Checkpoint,
+            // the last 3 are ordered by gut feel (for now)
+            TokenType::BeamSplitter,
+            TokenType::DoubleMirror,
+            // CellBlocker is not allowed in to_be_added, but is here for completeness
+            TokenType::CellBlocker,
+        ];
+        let mut new_tokens = vec![];
+
+        for token_type in reference_order {
+            for token in &self.tokens_to_be_added {
+                if token.type_() == &token_type {
+                    new_tokens.push(token.clone());
+                }
+            }
+        }
+
+        self.tokens_to_be_added = new_tokens;
     }
 
     #[allow(dead_code)]
@@ -146,6 +184,8 @@ impl LaserMazeSolver {
             panic!("invalid challenge");
         }
 
+        self.initialize();
+
         let result_found = Arc::new(AtomicBool::new(false));
         let mut threads = vec![];
         for _ in 0..n_threads {
@@ -166,6 +206,8 @@ impl LaserMazeSolver {
         if !self.validate() {
             panic!("invalid challenge");
         }
+
+        self.initialize();
 
         // get the stack out of the Arc<Mutex<>>
         let mut stack = self.dfs_stack.lock().unwrap().clone();

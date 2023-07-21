@@ -1,5 +1,4 @@
 use crate::orientation::Orientation;
-use std::ops;
 
 #[derive(Clone, Debug)]
 pub struct Token {
@@ -150,7 +149,7 @@ impl Token {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Eq, Hash, Debug)]
+#[derive(PartialEq, Copy, Clone, Eq, Hash, Debug, PartialOrd, Ord)]
 pub enum TokenType {
     Laser,
     TargetMirror,
