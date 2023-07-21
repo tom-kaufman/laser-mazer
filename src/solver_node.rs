@@ -161,13 +161,13 @@ impl SolverNode {
     }
 
     fn generate_rotation_setting_branches(&mut self) -> Vec<Self> {
-        for i in 0..25 {
-            if let Some(token) = &self.cells[i] {
+        for i in SPIRAL_ORDER.iter() {
+            if let Some(token) = &self.cells[*i] {
                 if token.orientation().is_none() {
                     let mut result = vec![];
-                    for x in self.orientation_iter(token.type_(), i) {
+                    for x in self.orientation_iter(token.type_(), *i) {
                         let mut new_node = self.clone();
-                        new_node.cells[i]
+                        new_node.cells[*i]
                             .as_mut()
                             .expect("We just validated there is a token in this cell")
                             .orientation = Some(Orientation::from_index(x));
