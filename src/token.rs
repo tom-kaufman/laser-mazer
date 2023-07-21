@@ -148,16 +148,6 @@ impl Token {
             }
         }
     }
-
-    pub fn orientation_range(&self) -> ops::Range<usize> {
-        match self.type_ {
-            TokenType::BeamSplitter => 0..2,
-            TokenType::DoubleMirror => 0..2,
-            TokenType::Checkpoint => 0..2,
-            TokenType::CellBlocker => 0..1,
-            _ => 0..4,
-        }
-    }
 }
 
 #[derive(PartialEq, Copy, Clone, Eq, Hash, Debug)]
@@ -168,4 +158,17 @@ pub enum TokenType {
     DoubleMirror,
     Checkpoint,
     CellBlocker,
+}
+
+impl TokenType {
+    // considers the symmetry of the pieces
+    pub fn orientation_range(&self) -> Vec<usize> {
+        match self {
+            TokenType::BeamSplitter => vec![0, 1],
+            TokenType::DoubleMirror => vec![0, 1],
+            TokenType::Checkpoint => vec![0, 1],
+            TokenType::CellBlocker => vec![0],
+            _ => vec![0, 1, 2, 3],
+        }
+    }
 }

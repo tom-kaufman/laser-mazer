@@ -53,12 +53,119 @@ impl SolverNode {
         }
     }
 
+    // for generating rotation branches, which rotations are valid?
+    fn orientation_iter(&self, token_type: &TokenType, cell_index: usize) -> Vec<usize> {
+        let mut result = token_type.orientation_range();
+
+        // if the token can point out of the board, directly return this token type's orientation range
+        if [
+            TokenType::BeamSplitter,
+            TokenType::DoubleMirror,
+            TokenType::CellBlocker,
+        ]
+        .contains(token_type)
+        {
+            return result;
+        }
+        // otherwise, we need to know if this piece is on an edge
+        let mut forbidden_directions = self
+            .forbidden_orientations(cell_index)
+            .into_iter()
+            .flatten()
+            .map(|o| o.to_index())
+            .collect::<Vec<usize>>();
+
+        match token_type {
+            // the laser has no symmetry so we can directly use forbidden_directions to prune the result
+            TokenType::Laser => {
+                result.retain(|orientation_idx| !forbidden_directions.contains(orientation_idx));
+                result
+            }
+            // the checkpoint has 180 degree symmetry
+            TokenType::Checkpoint => {
+                for idx in forbidden_directions.iter_mut() {
+                    if *idx > 1 {
+                        *idx -= 2;
+                    }
+                }
+                result.retain(|orientation_idx| !forbidden_directions.contains(orientation_idx));
+                result
+            }
+            // the target mirror is more complicated. we must consider if this target must be lit,
+            // how many target mirrors are lightable,
+            TokenType::TargetMirror => {
+                self.target_mirror_orientation_iter(forbidden_directions, cell_index)
+            }
+            _ => {
+                // this should be unreachable
+                result
+            }
+        }
+    }
+
+    fn n_targets_which_must_be_lit(&self) -> u8 {
+        self.cells
+            .as_ref()
+            .into_iter()
+            .flatten()
+            .map(|token| {
+                // only TargetMirrors can be constructed with must_light = true, so no need to check token type
+                token.must_light()
+            })
+            .count() as u8
+    }
+
+    fn n_targets_which_may_not_be_lit_and_accessible_or_not_oriented(&self) -> u8 {
+        self.cells.as_ref().into_iter().enumerate().map(|(idx, token)| {
+            if let Some(token) = token {
+                let forbidden_directions: Vec<usize> = self.forbidden_orientations(idx).into_iter().flatten().map(|o| {o.to_index()}).collect::<Vec<usize>>();
+                (token.type_() == &TokenType::TargetMirror) && !token.must_light() && (token.orientation().is_none() || !forbidden_directions.contains(&token.orientation().expect("won't enter this branch of or statement if orientation is None").to_index()))
+            } else {
+                false
+            }
+        }).count() as u8
+    }
+
+    fn target_mirror_orientation_iter(
+        &self,
+        forbidden_directions: Vec<usize>,
+        cell_index: usize,
+    ) -> Vec<usize> {
+        let mut result = vec![0, 1, 2, 3];
+        // if this token must be lit, it cannot be inaccessible
+        if let Some(target_mirror_token) = &self.cells[cell_index] {
+            if !(target_mirror_token.type_() == &TokenType::TargetMirror) {
+                panic!(
+                    "Tried checking target mirror rotations on a cell not holding a target mirror"
+                )
+            }
+            if target_mirror_token.must_light() {
+                result.retain(|orientation_idx| !forbidden_directions.contains(orientation_idx));
+                return result;
+            }
+        } else {
+            panic!("Tried checking target mirror rotations on a cell not holding a target mirror")
+        }
+
+        // first, subtract the number of targets which must be lit from total number of targets
+        // if we have more than that difference of targets which may not be lit,
+        // then this piece may or may not point out of the board. but if we have less than or equal to that
+        // difference, we must make this target accessible.
+        if self.targets - self.n_targets_which_must_be_lit()
+            <= self.n_targets_which_may_not_be_lit_and_accessible_or_not_oriented()
+        {
+            result.retain(|orientation_idx| !forbidden_directions.contains(orientation_idx));
+        }
+
+        result
+    }
+
     fn generate_rotation_setting_branches(&mut self) -> Vec<Self> {
         for i in 0..25 {
             if let Some(token) = &self.cells[i] {
                 if token.orientation().is_none() {
                     let mut result = vec![];
-                    for x in token.orientation_range() {
+                    for x in self.orientation_iter(token.type_(), i) {
                         let mut new_node = self.clone();
                         new_node.cells[i]
                             .as_mut()
@@ -179,7 +286,7 @@ impl SolverNode {
     }
 
     // returns an array representing the out-of-board orientations
-    fn is_edge_cell(&self, cell_index: usize) -> [Option<Orientation>; 2] {
+    fn forbidden_orientations(&self, cell_index: usize) -> [Option<Orientation>; 2] {
         // the center cannot be considered an edge piece, regardless of the cell blocker's location
         if cell_index == 12 {
             return [None, None];
@@ -337,24 +444,30 @@ mod test {
         let solver = SolverNode::new(cells, vec![], 1);
         assert_eq!(
             [Some(Orientation::North), Some(Orientation::East)],
-            solver.is_edge_cell(19)
+            solver.forbidden_orientations(19)
         );
         // test piece away from cell blocker or edge
-        assert_eq!([None, None], solver.is_edge_cell(18));
+        assert_eq!([None, None], solver.forbidden_orientations(18));
         // test piece on edge
-        assert_eq!([Some(Orientation::West), None], solver.is_edge_cell(10));
+        assert_eq!(
+            [Some(Orientation::West), None],
+            solver.forbidden_orientations(10)
+        );
         // test piece on corner
         assert_eq!(
             [Some(Orientation::South), Some(Orientation::West)],
-            solver.is_edge_cell(0)
+            solver.forbidden_orientations(0)
         );
         // test center
-        assert_eq!([None, None], solver.is_edge_cell(12));
+        assert_eq!([None, None], solver.forbidden_orientations(12));
 
         // test cell blocker on non-corner edge with piece neighboring
         let mut cells: [Option<Token>; 25] = Default::default();
         cells[3] = Some(Token::new(TokenType::CellBlocker, None, false));
         let solver = SolverNode::new(cells, vec![], 1);
-        assert_eq!([Some(Orientation::South), None], solver.is_edge_cell(8));
+        assert_eq!(
+            [Some(Orientation::South), None],
+            solver.forbidden_orientations(8)
+        );
     }
 }
