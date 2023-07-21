@@ -108,7 +108,7 @@ impl SolverNode {
             .as_ref()
             .into_iter()
             .flatten()
-            .map(|token| {
+            .filter(|token| {
                 // only TargetMirrors can be constructed with must_light = true, so no need to check token type
                 token.must_light()
             })
@@ -116,9 +116,9 @@ impl SolverNode {
     }
 
     fn n_targets_which_may_not_be_lit_and_accessible_or_not_oriented(&self) -> u8 {
-        self.cells.as_ref().into_iter().enumerate().map(|(idx, token)| {
+        self.cells.as_ref().into_iter().enumerate().filter(|(idx, token)| {
             if let Some(token) = token {
-                let forbidden_directions: Vec<usize> = self.forbidden_orientations(idx).into_iter().flatten().map(|o| {o.to_index()}).collect::<Vec<usize>>();
+                let forbidden_directions: Vec<usize> = self.forbidden_orientations(*idx).into_iter().flatten().map(|o| {o.to_index()}).collect::<Vec<usize>>();
                 (token.type_() == &TokenType::TargetMirror) && !token.must_light() && (token.orientation().is_none() || !forbidden_directions.contains(&token.orientation().expect("won't enter this branch of or statement if orientation is None").to_index()))
             } else {
                 false

@@ -426,4 +426,46 @@ mod test {
         println!("{:?}", result.unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
+
+    #[test]
+    fn test_solver_puzzle_40_st() {
+        let mut cells: [Option<Token>; 25] = Default::default();
+
+        cells[3] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::North),
+            true,
+        ));
+        cells[9] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::West),
+            true,
+        ));
+        cells[11] = Some(Token::new(
+            TokenType::DoubleMirror,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[17] = Some(Token::new(
+            TokenType::Checkpoint,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[20] = Some(Token::new(TokenType::Laser, None, false));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve_single_thread();
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
 }
