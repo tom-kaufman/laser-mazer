@@ -112,16 +112,18 @@ impl LaserMazeSolver {
     // initialize some things (for now, just sort the pieces to be added heuristically)
     fn initialize(&mut self) {
         // sort the tokens to be added
+        // we will get tokens out of the "to be added vec" with pop so we will sort with the 
+        // tokens we want to place first at the end of the vec
         let reference_order = [
-            // the first 3 have more heuristics
-            TokenType::Laser,
-            TokenType::TargetMirror,
-            TokenType::Checkpoint,
-            // the last 3 are ordered by gut feel (for now)
-            TokenType::BeamSplitter,
-            TokenType::DoubleMirror,
             // CellBlocker is not allowed in to_be_added, but is here for completeness
-            TokenType::CellBlocker,
+            TokenType::CellBlocker,            
+            // the last 3 are ordered by gut feel (for now)
+            TokenType::DoubleMirror,
+            TokenType::BeamSplitter,
+            // the first 3 have more heuristics
+            TokenType::Checkpoint,
+            TokenType::TargetMirror,
+            TokenType::Laser,
         ];
         let mut new_tokens = vec![];
 
@@ -226,34 +228,75 @@ impl LaserMazeSolver {
 
         None
     }
+
+    #[allow(dead_code)]
+    pub fn solve_single_thread_laser_aware(&mut self) -> Option<[Option<Token>; 25]> {
+        if !self.validate() {
+            panic!("invalid challenge");
+        }
+
+        self.initialize();
+
+        // get the stack out of the Arc<Mutex<>>
+        let mut stack = self.dfs_stack.lock().unwrap().clone();
+
+        while !stack.is_empty() {
+            let mut node = stack.pop().expect("loop criteria is non-empty vec");
+            let new_nodes = node.generate_branches_laser_aware();
+            if new_nodes.is_empty() {
+                if node.clone().check() {
+                    return Some(node.clone_cells());
+                }
+            } else {
+                stack.extend(new_nodes);
+            }
+        }
+
+        None
+    }
 }
 
 fn main() {
-    let mut cells: [Option<Token>; 25] = Default::default();
+    for _ in 0..100 {
+        let mut cells: [Option<Token>; 25] = Default::default();
 
-    cells[3] = Some(Token::new(TokenType::TargetMirror, None, true));
-    cells[7] = Some(Token::new(TokenType::Checkpoint, None, false));
-    cells[8] = Some(Token::new(TokenType::BeamSplitter, None, false));
-    cells[20] = Some(Token::new(TokenType::Laser, None, false));
-    cells[23] = Some(Token::new(
-        TokenType::CellBlocker,
-        Some(Orientation::East),
-        false,
-    ));
+        cells[3] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::North),
+            true,
+        ));
+        cells[9] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::West),
+            true,
+        ));
+        cells[11] = Some(Token::new(
+            TokenType::DoubleMirror,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[17] = Some(Token::new(
+            TokenType::Checkpoint,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[20] = Some(Token::new(TokenType::Laser, None, false));
 
-    let tokens_to_be_added = vec![
-        Token::new(TokenType::TargetMirror, None, true),
-        Token::new(TokenType::DoubleMirror, None, false),
-    ];
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
 
-    let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
 
-    let t0 = time::Instant::now();
-    let result = solver.solve_single_thread();
-    let t1 = time::Instant::now();
+        let t0 = time::Instant::now();
+        let result = solver.solve_multi_thread(16);
+        let t1 = time::Instant::now();
 
-    println!("{:?}", result.unwrap());
-    println!("Processed in {:?}", t1 - t0);
+        // println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
 }
 
 #[cfg(test)]
@@ -468,4 +511,132 @@ mod test {
         println!("{:?}", result.unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
+
+    #[test]
+    fn test_solver_puzzle_40_par() {
+        let mut cells: [Option<Token>; 25] = Default::default();
+
+        cells[3] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::North),
+            true,
+        ));
+        cells[9] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::West),
+            true,
+        ));
+        cells[11] = Some(Token::new(
+            TokenType::DoubleMirror,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[17] = Some(Token::new(
+            TokenType::Checkpoint,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[20] = Some(Token::new(TokenType::Laser, None, false));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve_multi_thread(16);
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
 }
+
+
+/* 
+bugged board
+cells: [
+		None, 
+		None, 
+		None, 
+		Some(Token {
+			type_: TargetMirror,
+			orientation: Some(North),
+			lit: false,
+			target_lit: Some(false),
+			must_light: true
+		}), 
+		None, 
+		Some(Token {
+			type_: TargetMirror,
+			orientation: Some(South),
+			lit: true,
+			target_lit: Some(false),
+			must_light: false
+		}), 
+		Some(Token {
+			type_: TargetMirror,
+			orientation: Some(East),
+			lit: true,
+			target_lit: Some(false),
+			must_light: false
+		}), 
+		None, 
+		None, 
+		Some(Token {
+        type_: TargetMirror,
+			orientation: Some(West),
+			lit: false,
+			target_lit: Some(false),
+			must_light: true
+		}), 
+		Some(Token {
+			type_: BeamSplitter,
+			orientation: Some(North),
+			lit: true,
+			target_lit: None,
+			must_light: false
+		}), 
+		Some(Token {
+			type_: DoubleMirror,
+			orientation: Some(North),
+			lit: true,
+			target_lit: None,
+			must_light: false
+		}), 
+		Some(Token {
+			type_: TargetMirror,
+			orientation: Some(West),
+			lit: false,
+			target_lit: Some(false),
+			must_light: false
+		}), 
+		None, 
+		None, 
+		None, 
+		None, 
+		Some(Token {
+			type_: Checkpoint,
+			orientation: Some(North),
+			lit: false,
+			target_lit: None,
+			must_light: false
+		}), 
+		None, 
+		None, 
+		Some(Token {
+			type_: Laser,
+			orientation: Some(South),
+			lit: false,
+			target_lit: None,
+			must_light: false
+		}), 
+		None, 
+		None, 
+		None, 
+		None
+
+*/

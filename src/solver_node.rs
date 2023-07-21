@@ -10,6 +10,7 @@ use lazy_static::lazy_static;
 pub struct SolverNode {
     cells: [Option<Token>; 25],
     tokens_to_be_added: Vec<Token>,
+    tokens_to_be_added_shuffled: Vec<Token>,
     laser_visited: [[bool; 4]; 25],
     active_lasers: [Option<ActiveLaser>; 3],
     targets: u8,
@@ -28,6 +29,7 @@ impl SolverNode {
             ..Default::default()
         }
     }
+
     pub fn generate_branches(&mut self) -> Vec<Self> {
         let placement_branches = self.generate_token_placement_branches();
         if placement_branches.is_empty() {
@@ -35,6 +37,45 @@ impl SolverNode {
         } else {
             placement_branches
         }
+    }
+
+    pub fn generate_branches_laser_aware(&mut self) -> Vec<Self> {
+        if !self.laser_placed() {
+            // the laser will be sorted to be at the top of the vec, so this will place the laser
+            return self.generate_token_placement_branches();
+        }
+        if !self.all_placed_tokens_have_orientation_set() {
+            // if not all pieces on the grid have their rotation set, we want to set them first
+            return self.generate_rotation_setting_branches()
+        }
+        // now, we have the laser placed and all orientations of pieces on the board set
+        // next, we need to shuffle the pieces to be added
+        if !self.tokens_to_be_added.is_empty() {
+            return self.generate_shuffled_tokens_to_be_added_branches();
+        }
+        if !self.tokens_to_be_added_shuffled.is_empty() {
+            // we now need to place pieces on the grid such that they interact with the laser
+            return self.generate_token_placement_branches_laser_aware();
+        }
+        
+        // if we reach this point, we are at a leaf
+        vec![]
+    }
+
+    fn laser_placed(&self) -> bool {
+        self.cells.as_ref().into_iter().flatten().any(|token| token.type_() == &TokenType::Laser)
+    }
+
+    fn all_placed_tokens_have_orientation_set(&self) -> bool {
+        self.cells.as_ref().into_iter().flatten().all(|token| token.orientation().is_some())
+    }
+
+    fn generate_shuffled_tokens_to_be_added_branches(&mut self) -> Vec<Self> {
+        todo!()
+    }
+
+    fn generate_token_placement_branches_laser_aware(&mut self) -> Vec<Self> {
+        todo!()
     }
 
     fn generate_token_placement_branches(&mut self) -> Vec<Self> {
@@ -196,7 +237,7 @@ impl SolverNode {
             // inner loop: iterate on lasers and do some work on Some()s until no more active lasers
             let mut new_laser_index = 0;
             let mut new_lasers = [None, None, None];
-            for laser in self.active_lasers.into_iter().flatten() {
+            for laser in self.active_lasers.clone().into_iter().flatten() {
                 // if the laser is still on the board after going to the next position, check for
                 // a token. if there's a token, do the interactions.
                 // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
@@ -207,6 +248,10 @@ impl SolverNode {
                             .into_iter()
                             .flatten()
                         {
+                            if new_laser_index > 2 {
+                                println!("{:?}", self);
+                                panic!("laser index > 2!");
+                            }
                             new_lasers[new_laser_index] = Some(ActiveLaser {
                                 cell_index: next_laser_position,
                                 orientation: new_laser_direction,
@@ -214,6 +259,10 @@ impl SolverNode {
                             new_laser_index += 1;
                         }
                     } else {
+                        if new_laser_index > 2 {
+                            println!("{:?}", self);
+                            panic!("laser index > 2!!");
+                        }
                         new_lasers[new_laser_index] = Some(ActiveLaser {
                             cell_index: next_laser_position,
                             orientation: laser.orientation.clone(),
