@@ -369,7 +369,7 @@ fn main() {
         let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
 
         let t0 = time::Instant::now();
-        let result = solver.solve_multi_thread(16);
+        let _result = solver.solve_multi_thread(16);
         let t1 = time::Instant::now();
 
         // println!("{:?}", result.unwrap());

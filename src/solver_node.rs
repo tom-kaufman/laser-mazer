@@ -72,7 +72,7 @@ impl SolverNode {
     fn laser_placed(&self) -> bool {
         self.cells
             .as_ref()
-            .into_iter()
+            .iter()
             .flatten()
             .any(|token| token.type_() == &TokenType::Laser)
     }
@@ -80,7 +80,7 @@ impl SolverNode {
     fn all_placed_tokens_have_orientation_set(&self) -> bool {
         self.cells
             .as_ref()
-            .into_iter()
+            .iter()
             .flatten()
             .all(|token| token.orientation().is_some())
     }
@@ -182,7 +182,7 @@ impl SolverNode {
             }
 
             if n_beam_splitters > 0 {
-                let mut new_ordering = current_ordering.clone();
+                let mut new_ordering = current_ordering;
                 new_ordering.push(Token::new(TokenType::BeamSplitter, None, false));
                 backtrack(
                     n_target_mirrors_must_light,
@@ -346,7 +346,7 @@ impl SolverNode {
     fn n_targets_which_must_be_lit(&self) -> u8 {
         self.cells
             .as_ref()
-            .into_iter()
+            .iter()
             .flatten()
             .filter(|token| {
                 // only TargetMirrors can be constructed with must_light = true, so no need to check token type
@@ -356,7 +356,7 @@ impl SolverNode {
     }
 
     fn n_targets_which_may_not_be_lit_and_accessible_or_not_oriented(&self) -> u8 {
-        self.cells.as_ref().into_iter().enumerate().filter(|(idx, token)| {
+        self.cells.as_ref().iter().enumerate().filter(|(idx, token)| {
             if let Some(token) = token {
                 let forbidden_directions: Vec<usize> = self.forbidden_orientations(*idx).into_iter().flatten().map(|o| {o.to_index()}).collect::<Vec<usize>>();
                 (token.type_() == &TokenType::TargetMirror) && !token.must_light() && (token.orientation().is_none() || !forbidden_directions.contains(&token.orientation().expect("won't enter this branch of or statement if orientation is None").to_index()))
@@ -374,7 +374,7 @@ impl SolverNode {
         let mut result = vec![0, 1, 2, 3];
         // if this token must be lit, it cannot be inaccessible
         if let Some(target_mirror_token) = &self.cells[cell_index] {
-            if !(target_mirror_token.type_() == &TokenType::TargetMirror) {
+            if target_mirror_token.type_() != &TokenType::TargetMirror {
                 panic!(
                     "Tried checking target mirror rotations on a cell not holding a target mirror"
                 )
@@ -408,7 +408,7 @@ impl SolverNode {
                     let mut result = vec![];
                     if *i == 14 && token.type_() == &TokenType::Laser {
                         // TODO delete me
-                        let x = self.orientation_iter(token.type_(), *i);
+                        let _x = self.orientation_iter(token.type_(), *i);
                         // println!(
                         //     "Configuring rotation of laser in slot 14, orientation indices = {:?}",
                         //     x
@@ -588,7 +588,7 @@ impl SolverNode {
         if let Some((cell_blocker_index, _)) =
             self.cells
                 .as_ref()
-                .into_iter()
+                .iter()
                 .enumerate()
                 .find(|(_, token)| {
                     if let Some(token) = token {
