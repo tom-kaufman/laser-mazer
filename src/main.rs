@@ -159,41 +159,33 @@ fn main() {
     for _ in 0..100 {
         let mut cells: [Option<Token>; 25] = Default::default();
 
-        cells[3] = Some(Token::new(
+        cells[3] = Some(Token::new(TokenType::TargetMirror, None, false));
+        cells[6] = Some(Token::new(
             TokenType::TargetMirror,
             Some(Orientation::North),
             true,
         ));
-        cells[9] = Some(Token::new(
+        cells[12] = Some(Token::new(
             TokenType::TargetMirror,
-            Some(Orientation::West),
+            Some(Orientation::South),
             true,
         ));
-        cells[11] = Some(Token::new(
-            TokenType::DoubleMirror,
-            Some(Orientation::North),
-            false,
-        ));
-        cells[17] = Some(Token::new(
-            TokenType::Checkpoint,
-            Some(Orientation::North),
-            false,
-        ));
-        cells[20] = Some(Token::new(TokenType::Laser, None, false));
+        cells[18] = Some(Token::new(TokenType::DoubleMirror, None, false));
+        cells[21] = Some(Token::new(TokenType::BeamSplitter, None, false));
+        cells[24] = Some(Token::new(TokenType::TargetMirror, None, false));
 
         let mut tokens_to_be_added = vec![];
-        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
-        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::Laser, None, false));
         tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
         tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
 
-        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 3);
 
         let t0 = time::Instant::now();
-        let _result = solver.solve();
+        let result = solver.solve();
         let t1 = time::Instant::now();
 
-        // println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 }
