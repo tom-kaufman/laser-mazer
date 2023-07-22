@@ -44,28 +44,28 @@ impl SolverNode {
     pub fn generate_branches_laser_aware(&mut self) -> Vec<Self> {
         if !self.laser_placed() {
             // the laser will be sorted to be at the top of the vec, so this will place the laser
-            println!("Placing laser");
+            // println!("Placing laser");
             return self.generate_token_placement_branches();
         }
         if !self.all_placed_tokens_have_orientation_set() {
             // if not all pieces on the grid have their rotation set, we want to set them first
-            println!("Setting orientations of tokens already on grid");
+            // println!("Setting orientations of tokens already on grid");
             return self.generate_rotation_setting_branches();
         }
         // now, we have the laser placed and all orientations of pieces on the board set
         // next, we need to shuffle the pieces to be added
         if !self.tokens_to_be_added.is_empty() {
-            println!("Shuffling tokens to be added");
+            // println!("Shuffling tokens to be added");
             return self.generate_shuffled_tokens_to_be_added_branches();
         }
         if !self.tokens_to_be_added_shuffled.is_empty() {
             // we now need to place pieces on the grid such that they interact with the laser
-            println!("Placing a token somewhere in the path of the laser");
+            // println!("Placing a token somewhere in the path of the laser");
             return self.generate_token_placement_branches_laser_aware();
         }
 
         // if we reach this point, we are at a leaf
-        println!("At a leaf!");
+        // println!("At a leaf!");
         vec![]
     }
 
@@ -284,13 +284,6 @@ impl SolverNode {
                 if self.cells[*i].is_none() {
                     let mut new_node = self.clone();
                     new_node.cells[*i] = Some(token.clone());
-                    if *i == 14 && token.type_() == &TokenType::Laser {
-                        // TODO delete me
-                        println!(
-                            "Placed laser correctly for puzzle 50, orientation = {:?}",
-                            token.orientation()
-                        );
-                    }
                     result.push(new_node)
                 }
             }
@@ -416,29 +409,22 @@ impl SolverNode {
                     if *i == 14 && token.type_() == &TokenType::Laser {
                         // TODO delete me
                         let x = self.orientation_iter(token.type_(), *i);
-                        println!(
-                            "Configuring rotation of laser in slot 14, orientation indices = {:?}",
-                            x
-                        );
+                        // println!(
+                        //     "Configuring rotation of laser in slot 14, orientation indices = {:?}",
+                        //     x
+                        // );
                     }
-                    for x in self.orientation_iter(token.type_(), *i) {
+                    let mut orientation_iter = self.orientation_iter(token.type_(), *i);
+                    if orientation_iter.is_empty() {
+                        println!("WARNING: Found a token with no valid orientations. We'll make a dummy node that uses Some(North). This should be optimized out.");
+                        orientation_iter.push(0);
+                    }
+                    for x in orientation_iter {
                         let mut new_node = self.clone();
                         new_node.cells[*i]
                             .as_mut()
                             .expect("We just validated there is a token in this cell")
                             .orientation = Some(Orientation::from_index(x));
-                        // if *i == 14 && new_node.cells[*i].as_ref().unwrap().type_() == &TokenType::Laser && new_node.cells[*i].as_ref().unwrap().orientation == Some(Orientation::West) {
-                        //     // TODO delete me
-                        //     println!("Laser oriented correctly for puzzle 50");
-                        // }
-                        // if *i == 11 && new_node.cells[*i].as_ref().unwrap().type_() == &TokenType::BeamSplitter && new_node.cells[*i].as_ref().unwrap().orientation == Some(Orientation::East) {
-                        //     // TODO delete me
-                        //     println!("Beam splitter on slot 11 oriented correctly for puzzle 50");
-                        // }
-                        // if *i == 10 && new_node.cells[*i].as_ref().unwrap().type_() == &TokenType::TargetMirror && new_node.cells[*i].as_ref().unwrap().orientation == Some(Orientation::South) {
-                        //     // TODO delete me
-                        //     println!("Target on slot 10 oriented correctly for puzzle 50");
-                        // }
                         result.push(new_node);
                     }
                     return result;
