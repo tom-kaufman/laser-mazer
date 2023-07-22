@@ -8,8 +8,7 @@ use lazy_static::lazy_static;
 
 #[derive(Clone, Default, Debug)]
 pub struct SolverNode {
-    // TODO revert away from pub
-    pub cells: [Option<Token>; 25],
+    cells: [Option<Token>; 25],
     tokens_to_be_added: Vec<Token>,
     tokens_to_be_added_shuffled: Vec<Token>,
     laser_visited: [[bool; 4]; 25],
@@ -33,39 +32,25 @@ impl SolverNode {
     }
 
     pub fn generate_branches(&mut self) -> Vec<Self> {
-        let placement_branches = self.generate_token_placement_branches();
-        if placement_branches.is_empty() {
-            self.generate_rotation_setting_branches()
-        } else {
-            placement_branches
-        }
-    }
-
-    pub fn generate_branches_laser_aware(&mut self) -> Vec<Self> {
         if !self.laser_placed() {
             // the laser will be sorted to be at the top of the vec, so this will place the laser
-            // println!("Placing laser");
             return self.generate_token_placement_branches();
         }
         if !self.all_placed_tokens_have_orientation_set() {
             // if not all pieces on the grid have their rotation set, we want to set them first
-            // println!("Setting orientations of tokens already on grid");
             return self.generate_rotation_setting_branches();
         }
         // now, we have the laser placed and all orientations of pieces on the board set
         // next, we need to shuffle the pieces to be added
         if !self.tokens_to_be_added.is_empty() {
-            // println!("Shuffling tokens to be added");
             return self.generate_shuffled_tokens_to_be_added_branches();
         }
         if !self.tokens_to_be_added_shuffled.is_empty() {
             // we now need to place pieces on the grid such that they interact with the laser
-            // println!("Placing a token somewhere in the path of the laser");
             return self.generate_token_placement_branches_laser_aware();
         }
 
         // if we reach this point, we are at a leaf
-        // println!("At a leaf!");
         vec![]
     }
 
@@ -259,15 +244,12 @@ impl SolverNode {
         let mut result = vec![];
 
         if let Some(token) = self.tokens_to_be_added_shuffled.pop() {
-            // println!("Got a token of type {:?} of the shuffled vec of tokens to be added", token.type_());
             let empty_cells_with_active_laser =
                 self.clone().check().empty_cells_with_active_laser();
-            // println!("These cells are empty and have been visited by the laser: {:?}", empty_cells_with_active_laser);
             for i in SPIRAL_ORDER.iter() {
                 if !empty_cells_with_active_laser.contains(i) {
                     continue;
                 }
-                // println!("Generating a new node with the token placed at cell {i}");
                 let mut new_node = self.clone();
                 new_node.cells[*i] = Some(token.clone());
                 result.push(new_node)
@@ -277,6 +259,7 @@ impl SolverNode {
         result
     }
 
+    // in contrast to generate_token_placement_branches_laser_aware, place the next token to be added in any available cell
     fn generate_token_placement_branches(&mut self) -> Vec<Self> {
         if let Some(token) = self.tokens_to_be_added.pop() {
             let mut result = vec![];
@@ -343,29 +326,6 @@ impl SolverNode {
         }
     }
 
-    fn n_targets_which_must_be_lit(&self) -> u8 {
-        self.cells
-            .as_ref()
-            .iter()
-            .flatten()
-            .filter(|token| {
-                // only TargetMirrors can be constructed with must_light = true, so no need to check token type
-                token.must_light()
-            })
-            .count() as u8
-    }
-
-    fn n_targets_which_may_not_be_lit_and_accessible_or_not_oriented(&self) -> u8 {
-        self.cells.as_ref().iter().enumerate().filter(|(idx, token)| {
-            if let Some(token) = token {
-                let forbidden_directions: Vec<usize> = self.forbidden_orientations(*idx).into_iter().flatten().map(|o| {o.to_index()}).collect::<Vec<usize>>();
-                (token.type_() == &TokenType::TargetMirror) && !token.must_light() && (token.orientation().is_none() || !forbidden_directions.contains(&token.orientation().expect("won't enter this branch of or statement if orientation is None").to_index()))
-            } else {
-                false
-            }
-        }).count() as u8
-    }
-
     fn target_mirror_orientation_iter(
         &self,
         forbidden_directions: Vec<usize>,
@@ -387,17 +347,6 @@ impl SolverNode {
             panic!("Tried checking target mirror rotations on a cell not holding a target mirror")
         }
 
-        // first, subtract the number of targets which must be lit from total number of targets
-        // if we have more than that difference of targets which may not be lit,
-        // then this piece may or may not point out of the board. but if we have less than or equal to that
-        // difference, we must make this target accessible.
-        // TODO debug why this causes puzzle 40 to not solve (TargetMirror at slot 1 can't face south)
-        // if self.targets - self.n_targets_which_must_be_lit()
-        //     <= self.n_targets_which_may_not_be_lit_and_accessible_or_not_oriented()
-        // {
-        //     result.retain(|orientation_idx| !forbidden_directions.contains(orientation_idx));
-        // }
-
         result
     }
 
@@ -406,14 +355,6 @@ impl SolverNode {
             if let Some(token) = &self.cells[*i] {
                 if token.orientation().is_none() {
                     let mut result = vec![];
-                    if *i == 14 && token.type_() == &TokenType::Laser {
-                        // TODO delete me
-                        let _x = self.orientation_iter(token.type_(), *i);
-                        // println!(
-                        //     "Configuring rotation of laser in slot 14, orientation indices = {:?}",
-                        //     x
-                        // );
-                    }
                     let mut orientation_iter = self.orientation_iter(token.type_(), *i);
                     if orientation_iter.is_empty() {
                         println!("WARNING: Found a token with no valid orientations. We'll make a dummy node that uses Some(North). This should be optimized out.");
@@ -448,8 +389,6 @@ impl SolverNode {
 
         // outer loop: keep cranking the laser states until there are no more lasers
         while self.has_active_lasers() {
-            // println!("active lasers: {:?}", self.active_lasers);
-            // println!("visited lasers: {:?}", self.laser_visited);
             // inner loop: iterate on lasers and do some work on Some()s until no more active lasers
             let mut new_laser_index = 0;
             let mut new_lasers = [None, None, None, None];
@@ -467,10 +406,8 @@ impl SolverNode {
                             if self.laser_visited[next_laser_position]
                                 [new_laser_direction.to_index()]
                             {
-                                // println!("Laser is going in a loop!");
                                 continue;
                             }
-                            // println!("setting indices to true (hit piece): self.laser_visited[{}][{}]", next_laser_position, new_laser_direction.to_index());
                             self.laser_visited[next_laser_position]
                                 [new_laser_direction.to_index()] = true;
                             if new_laser_index > 3 {
@@ -493,7 +430,6 @@ impl SolverNode {
                             }
                         }
                     } else {
-                        // println!("setting indices to true (empty cell): self.laser_visited[{}][{}]", next_laser_position, laser.orientation.to_index());
                         self.laser_visited[next_laser_position][laser.orientation.to_index()] =
                             true;
                         if new_laser_index > 3 {
@@ -576,7 +512,6 @@ impl SolverNode {
     }
 
     // returns an array representing the out-of-board orientations
-    // TODO this should also check for neighboring pieces which block the laser path (i.e. checkpoint feeding into the wall of a target)
     fn forbidden_orientations(&self, cell_index: usize) -> [Option<Orientation>; 2] {
         // the center cannot be considered an edge piece, regardless of the cell blocker's location
         if cell_index == 12 {
@@ -586,17 +521,13 @@ impl SolverNode {
         // we need to check the cell blocker first because edge pieces can have a different result from this
         // function if the cell blocker is on a corner
         if let Some((cell_blocker_index, _)) =
-            self.cells
-                .as_ref()
-                .iter()
-                .enumerate()
-                .find(|(_, token)| {
-                    if let Some(token) = token {
-                        token.type_() == &TokenType::CellBlocker
-                    } else {
-                        false
-                    }
-                })
+            self.cells.as_ref().iter().enumerate().find(|(_, token)| {
+                if let Some(token) = token {
+                    token.type_() == &TokenType::CellBlocker
+                } else {
+                    false
+                }
+            })
         {
             // neighboring_cell_indices are the cell(s) neighboring the blocker we need to check
             let neighboring_cell_indices = match cell_blocker_index {
