@@ -21,3 +21,12 @@
 			
     - splitting mirror pieces never go on corners
     - gate pieces never go on corners
+
+
+# using parts of the checker for the solver
+DFS order:
+1. Laser set + rotated
+2. All set pieces rotated
+3. Set + rotate one token at a time
+4. When setting in (3), use the laser path to make assertions: the piece must go in the path of the laser
+5. 

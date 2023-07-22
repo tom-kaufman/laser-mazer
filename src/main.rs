@@ -112,11 +112,11 @@ impl LaserMazeSolver {
     // initialize some things (for now, just sort the pieces to be added heuristically)
     fn initialize(&mut self) {
         // sort the tokens to be added
-        // we will get tokens out of the "to be added vec" with pop so we will sort with the 
+        // we will get tokens out of the "to be added vec" with pop so we will sort with the
         // tokens we want to place first at the end of the vec
         let reference_order = [
             // CellBlocker is not allowed in to_be_added, but is here for completeness
-            TokenType::CellBlocker,            
+            TokenType::CellBlocker,
             // the last 3 are ordered by gut feel (for now)
             TokenType::DoubleMirror,
             TokenType::BeamSplitter,
@@ -165,7 +165,7 @@ impl LaserMazeSolver {
                 // if new_nodes is still empty, we're at a leaf; check the puzzle and return a Some() if we find solution
                 // if new_nodes is not empty, we push the new items on the stack and don't check solution
                 if new_nodes.is_empty() {
-                    if node.clone().check() {
+                    if node.clone().check().solved() {
                         result_found.store(true, Ordering::Release);
                         return Some(node.clone_cells());
                     }
@@ -218,7 +218,7 @@ impl LaserMazeSolver {
             let mut node = stack.pop().expect("loop criteria is non-empty vec");
             let new_nodes = node.generate_branches();
             if new_nodes.is_empty() {
-                if node.clone().check() {
+                if node.clone().check().solved() {
                     return Some(node.clone_cells());
                 }
             } else {
@@ -243,10 +243,48 @@ impl LaserMazeSolver {
         while !stack.is_empty() {
             let mut node = stack.pop().expect("loop criteria is non-empty vec");
             let new_nodes = node.generate_branches_laser_aware();
+            println!(
+                "Stack has len {}, extending by {} nodes",
+                stack.len(),
+                new_nodes.len()
+            );
             if new_nodes.is_empty() {
-                if node.clone().check() {
+                println!("At a leaf!!");
+                // println!("Leaf we're about to check: {:?}", &node);
+
+                // TODO delete me
+                // if node.cells[14].as_ref().is_some() && node.cells[14].as_ref().unwrap().type_() == &TokenType::Laser && node.cells[14].as_ref().unwrap().orientation == Some(Orientation::West) {
+                //     // println!("Laser oriented correctly for puzzle 50");
+                //     if node.cells[11].as_ref().is_some() && node.cells[11].as_ref().unwrap().type_() == &TokenType::BeamSplitter && node.cells[11].as_ref().unwrap().orientation == Some(Orientation::East) {
+                //         // println!("Beam splitter on slot 11 oriented correctly for puzzle 50");
+                //         if node.cells[10].as_ref().is_some() && node.cells[10].as_ref().unwrap().type_() == &TokenType::TargetMirror && node.cells[10].as_ref().unwrap().orientation == Some(Orientation::South) {
+                //             // println!("Target on slot 10 oriented correctly for puzzle 50");
+                //             if node.cells[20].as_ref().is_some() && node.cells[20].as_ref().unwrap().type_() == &TokenType::TargetMirror && node.cells[20].as_ref().unwrap().orientation == Some(Orientation::South) {
+                //                 // println!("Target on slot 20 oriented correctly for puzzle 50");
+                //                 if node.cells[6].as_ref().is_some() && node.cells[6].as_ref().unwrap().type_() == &TokenType::BeamSplitter && node.cells[6].as_ref().unwrap().orientation == Some(Orientation::North) {
+                //                     // println!("Splitter on slot 6 oriented correctly for puzzle 50");
+                //                     if node.cells[7].as_ref().is_some() && node.cells[7].as_ref().unwrap().type_() == &TokenType::TargetMirror && node.cells[7].as_ref().unwrap().orientation == Some(Orientation::West) {
+                //                         println!("Target on slot 7 oriented correctly for puzzle 50");
+                //                         if node.cells[1].as_ref().is_some() && node.cells[1].as_ref().unwrap().type_() == &TokenType::TargetMirror && node.cells[1].as_ref().unwrap().orientation == Some(Orientation::South) {
+                //                             println!("Target on slot 1 oriented correctly for puzzle 50");
+                //                             if node.cells[4].as_ref().is_some() && node.cells[4].as_ref().unwrap().type_() == &TokenType::TargetMirror && node.cells[4].as_ref().unwrap().orientation == Some(Orientation::West) {
+                //                                 println!("Target on slot 4 oriented correctly for puzzle 50");
+                //                             }
+                //                         }  else if node.cells[1].as_ref().is_some() && node.cells[1].as_ref().unwrap().type_() == &TokenType::TargetMirror {
+                //                             println!("Target is on slot 1 but wrong orientation; orientation = {:?}", node.cells[1].as_ref().unwrap().orientation);
+                //                         }
+                //                     }
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
+
+                if node.clone().check().solved() {
+                    // println!("Solution!");
                     return Some(node.clone_cells());
                 }
+                // println!("Not a solution!");
             } else {
                 stack.extend(new_nodes);
             }
@@ -377,7 +415,8 @@ mod test {
         let result = solver_node
             .pop()
             .expect("LaserMazeSolver initializes with a node")
-            .check();
+            .check()
+            .solved();
         assert!(result)
     }
 
@@ -408,6 +447,39 @@ mod test {
 
         let t0 = time::Instant::now();
         let result = solver.solve_multi_thread(16);
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
+
+    #[test]
+    fn test_solver_simple_laser_aware() {
+        let mut cells: [Option<Token>; 25] = Default::default();
+
+        cells[0] = Some(Token::new(
+            TokenType::Laser,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[6] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::West),
+            true,
+        ));
+        cells[10] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::South),
+            false,
+        ));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve_single_thread_laser_aware();
         let t1 = time::Instant::now();
 
         println!("{:?}", result.unwrap());
@@ -553,90 +625,196 @@ mod test {
         println!("{:?}", result.unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
+
+    #[test]
+    fn test_solver_puzzle_40_st_laser_aware() {
+        let mut cells: [Option<Token>; 25] = Default::default();
+
+        cells[3] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::North),
+            true,
+        ));
+        cells[9] = Some(Token::new(
+            TokenType::TargetMirror,
+            Some(Orientation::West),
+            true,
+        ));
+        cells[11] = Some(Token::new(
+            TokenType::DoubleMirror,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[17] = Some(Token::new(
+            TokenType::Checkpoint,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[20] = Some(Token::new(TokenType::Laser, None, false));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve_single_thread_laser_aware();
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
+
+    #[test]
+    fn test_solver_puzzle_50_st_laser_aware() {
+        let mut cells: [Option<Token>; 25] = Default::default();
+
+        cells[3] = Some(Token::new(
+            TokenType::CellBlocker,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[4] = Some(Token::new(TokenType::TargetMirror, None, true));
+        cells[6] = Some(Token::new(
+            TokenType::BeamSplitter,
+            Some(Orientation::North),
+            false,
+        ));
+        cells[7] = Some(Token::new(TokenType::TargetMirror, None, true));
+        cells[13] = Some(Token::new(
+            TokenType::Checkpoint,
+            Some(Orientation::East),
+            false,
+        ));
+        cells[20] = Some(Token::new(TokenType::TargetMirror, None, true));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::Laser, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 3);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve_single_thread_laser_aware();
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
+
+    #[test]
+    fn test_solver_puzzle_55_st_laser_aware() {
+        let mut cells: [Option<Token>; 25] = Default::default();
+
+        cells[2] = Some(Token::new(TokenType::TargetMirror, None, false));
+        cells[6] = Some(Token::new(TokenType::TargetMirror, None, false));
+        cells[9] = Some(Token::new(TokenType::TargetMirror, None, false));
+        cells[12] = Some(Token::new(TokenType::TargetMirror, None, false));
+        cells[18] = Some(Token::new(TokenType::TargetMirror, None, false));
+        cells[3] = Some(Token::new(TokenType::DoubleMirror, None, false));
+        cells[16] = Some(Token::new(TokenType::Laser, None, false));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::Checkpoint, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve_single_thread_laser_aware();
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result.unwrap());
+        println!("Processed in {:?}", t1 - t0);
+    }
 }
 
-
-/* 
+/*
 bugged board
 cells: [
-		None, 
-		None, 
-		None, 
-		Some(Token {
-			type_: TargetMirror,
-			orientation: Some(North),
-			lit: false,
-			target_lit: Some(false),
-			must_light: true
-		}), 
-		None, 
-		Some(Token {
-			type_: TargetMirror,
-			orientation: Some(South),
-			lit: true,
-			target_lit: Some(false),
-			must_light: false
-		}), 
-		Some(Token {
-			type_: TargetMirror,
-			orientation: Some(East),
-			lit: true,
-			target_lit: Some(false),
-			must_light: false
-		}), 
-		None, 
-		None, 
-		Some(Token {
+        None,
+        None,
+        None,
+        Some(Token {
+            type_: TargetMirror,
+            orientation: Some(North),
+            lit: false,
+            target_lit: Some(false),
+            must_light: true
+        }),
+        None,
+        Some(Token {
+            type_: TargetMirror,
+            orientation: Some(South),
+            lit: true,
+            target_lit: Some(false),
+            must_light: false
+        }),
+        Some(Token {
+            type_: TargetMirror,
+            orientation: Some(East),
+            lit: true,
+            target_lit: Some(false),
+            must_light: false
+        }),
+        None,
+        None,
+        Some(Token {
         type_: TargetMirror,
-			orientation: Some(West),
-			lit: false,
-			target_lit: Some(false),
-			must_light: true
-		}), 
-		Some(Token {
-			type_: BeamSplitter,
-			orientation: Some(North),
-			lit: true,
-			target_lit: None,
-			must_light: false
-		}), 
-		Some(Token {
-			type_: DoubleMirror,
-			orientation: Some(North),
-			lit: true,
-			target_lit: None,
-			must_light: false
-		}), 
-		Some(Token {
-			type_: TargetMirror,
-			orientation: Some(West),
-			lit: false,
-			target_lit: Some(false),
-			must_light: false
-		}), 
-		None, 
-		None, 
-		None, 
-		None, 
-		Some(Token {
-			type_: Checkpoint,
-			orientation: Some(North),
-			lit: false,
-			target_lit: None,
-			must_light: false
-		}), 
-		None, 
-		None, 
-		Some(Token {
-			type_: Laser,
-			orientation: Some(South),
-			lit: false,
-			target_lit: None,
-			must_light: false
-		}), 
-		None, 
-		None, 
-		None, 
-		None
+            orientation: Some(West),
+            lit: false,
+            target_lit: Some(false),
+            must_light: true
+        }),
+        Some(Token {
+            type_: BeamSplitter,
+            orientation: Some(North),
+            lit: true,
+            target_lit: None,
+            must_light: false
+        }),
+        Some(Token {
+            type_: DoubleMirror,
+            orientation: Some(North),
+            lit: true,
+            target_lit: None,
+            must_light: false
+        }),
+        Some(Token {
+            type_: TargetMirror,
+            orientation: Some(West),
+            lit: false,
+            target_lit: Some(false),
+            must_light: false
+        }),
+        None,
+        None,
+        None,
+        None,
+        Some(Token {
+            type_: Checkpoint,
+            orientation: Some(North),
+            lit: false,
+            target_lit: None,
+            must_light: false
+        }),
+        None,
+        None,
+        Some(Token {
+            type_: Laser,
+            orientation: Some(South),
+            lit: false,
+            target_lit: None,
+            must_light: false
+        }),
+        None,
+        None,
+        None,
+        None
 
 */

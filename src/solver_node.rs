@@ -8,11 +8,13 @@ use lazy_static::lazy_static;
 
 #[derive(Clone, Default, Debug)]
 pub struct SolverNode {
-    cells: [Option<Token>; 25],
+    // TODO revert away from pub
+    pub cells: [Option<Token>; 25],
     tokens_to_be_added: Vec<Token>,
     tokens_to_be_added_shuffled: Vec<Token>,
     laser_visited: [[bool; 4]; 25],
-    active_lasers: [Option<ActiveLaser>; 3],
+    // there can be 4 active lasers if 2 perpindicular lasers hit the same beam splitter
+    active_lasers: [Option<ActiveLaser>; 4],
     targets: u8,
 }
 
@@ -42,40 +44,237 @@ impl SolverNode {
     pub fn generate_branches_laser_aware(&mut self) -> Vec<Self> {
         if !self.laser_placed() {
             // the laser will be sorted to be at the top of the vec, so this will place the laser
+            println!("Placing laser");
             return self.generate_token_placement_branches();
         }
         if !self.all_placed_tokens_have_orientation_set() {
             // if not all pieces on the grid have their rotation set, we want to set them first
-            return self.generate_rotation_setting_branches()
+            println!("Setting orientations of tokens already on grid");
+            return self.generate_rotation_setting_branches();
         }
         // now, we have the laser placed and all orientations of pieces on the board set
         // next, we need to shuffle the pieces to be added
         if !self.tokens_to_be_added.is_empty() {
+            println!("Shuffling tokens to be added");
             return self.generate_shuffled_tokens_to_be_added_branches();
         }
         if !self.tokens_to_be_added_shuffled.is_empty() {
             // we now need to place pieces on the grid such that they interact with the laser
+            println!("Placing a token somewhere in the path of the laser");
             return self.generate_token_placement_branches_laser_aware();
         }
-        
+
         // if we reach this point, we are at a leaf
+        println!("At a leaf!");
         vec![]
     }
 
     fn laser_placed(&self) -> bool {
-        self.cells.as_ref().into_iter().flatten().any(|token| token.type_() == &TokenType::Laser)
+        self.cells
+            .as_ref()
+            .into_iter()
+            .flatten()
+            .any(|token| token.type_() == &TokenType::Laser)
     }
 
     fn all_placed_tokens_have_orientation_set(&self) -> bool {
-        self.cells.as_ref().into_iter().flatten().all(|token| token.orientation().is_some())
+        self.cells
+            .as_ref()
+            .into_iter()
+            .flatten()
+            .all(|token| token.orientation().is_some())
+    }
+
+    fn count_tokens_to_be_added_by_type(&self, type_: TokenType) -> usize {
+        self.tokens_to_be_added
+            .iter()
+            .filter(|token| token.type_() == &type_)
+            .count()
+    }
+
+    fn count_must_light_tokens_to_be_added(&self) -> usize {
+        self.tokens_to_be_added
+            .iter()
+            .filter(|token| token.must_light())
+            .count()
     }
 
     fn generate_shuffled_tokens_to_be_added_branches(&mut self) -> Vec<Self> {
-        todo!()
+        // because cell blockers may not be in the vec of tokens to be added, and we onyl call this function once the laser has been placed,
+        // we may only have TargetMirrors, Checkpoints, DoubleMirrors, and BeamSplitters. Given that we have t, c, d, and b of each,
+        // we will generate this many shufflings: (t+c+d+b)!/(t!c!d!b!). In the worst case, we'll have t=5, c=1, d=1, b=2, generating
+        // (5+1+1+2)!/(5!2!) = 1512 shufflings.
+
+        // recursively build a list of the unique permutations
+        fn backtrack(
+            n_target_mirrors_must_light: usize,
+            n_target_mirrors_may_not_light: usize,
+            n_checkpoints: usize,
+            n_double_mirrors: usize,
+            n_beam_splitters: usize,
+            current_ordering: Vec<Token>,
+            unique_orderings: &mut Vec<Vec<Token>>,
+        ) {
+            if n_target_mirrors_must_light == 0
+                && n_target_mirrors_may_not_light == 0
+                && n_checkpoints == 0
+                && n_double_mirrors == 0
+                && n_beam_splitters == 0
+            {
+                unique_orderings.push(current_ordering);
+                return;
+            }
+
+            if n_target_mirrors_must_light > 0 {
+                let mut new_ordering = current_ordering.clone();
+                new_ordering.push(Token::new(TokenType::TargetMirror, None, true));
+                backtrack(
+                    n_target_mirrors_must_light - 1,
+                    n_target_mirrors_may_not_light,
+                    n_checkpoints,
+                    n_double_mirrors,
+                    n_beam_splitters,
+                    new_ordering,
+                    unique_orderings,
+                );
+            }
+
+            if n_target_mirrors_may_not_light > 0 {
+                let mut new_ordering = current_ordering.clone();
+                new_ordering.push(Token::new(TokenType::TargetMirror, None, false));
+                backtrack(
+                    n_target_mirrors_must_light,
+                    n_target_mirrors_may_not_light - 1,
+                    n_checkpoints,
+                    n_double_mirrors,
+                    n_beam_splitters,
+                    new_ordering,
+                    unique_orderings,
+                );
+            }
+
+            if n_checkpoints > 0 {
+                let mut new_ordering = current_ordering.clone();
+                new_ordering.push(Token::new(TokenType::Checkpoint, None, false));
+                backtrack(
+                    n_target_mirrors_must_light,
+                    n_target_mirrors_may_not_light,
+                    n_checkpoints - 1,
+                    n_double_mirrors,
+                    n_beam_splitters,
+                    new_ordering,
+                    unique_orderings,
+                );
+            }
+
+            if n_double_mirrors > 0 {
+                let mut new_ordering = current_ordering.clone();
+                new_ordering.push(Token::new(TokenType::DoubleMirror, None, false));
+                backtrack(
+                    n_target_mirrors_must_light,
+                    n_target_mirrors_may_not_light,
+                    n_checkpoints,
+                    n_double_mirrors - 1,
+                    n_beam_splitters,
+                    new_ordering,
+                    unique_orderings,
+                );
+            }
+
+            if n_beam_splitters > 0 {
+                let mut new_ordering = current_ordering.clone();
+                new_ordering.push(Token::new(TokenType::BeamSplitter, None, false));
+                backtrack(
+                    n_target_mirrors_must_light,
+                    n_target_mirrors_may_not_light,
+                    n_checkpoints,
+                    n_double_mirrors,
+                    n_beam_splitters - 1,
+                    new_ordering,
+                    unique_orderings,
+                );
+            }
+        }
+
+        let n_target_mirrors_must_light = self.count_must_light_tokens_to_be_added();
+        let n_target_mirrors_may_not_light = self
+            .count_tokens_to_be_added_by_type(TokenType::TargetMirror)
+            - n_target_mirrors_must_light;
+        let n_checkpoints = self.count_tokens_to_be_added_by_type(TokenType::Checkpoint);
+        let n_double_mirrors = self.count_tokens_to_be_added_by_type(TokenType::DoubleMirror);
+        let n_beam_splitters = self.count_tokens_to_be_added_by_type(TokenType::BeamSplitter);
+
+        let mut unique_orderings: Vec<Vec<Token>> = vec![];
+        let current_ordering: Vec<Token> = vec![];
+
+        backtrack(
+            n_target_mirrors_must_light,
+            n_target_mirrors_may_not_light,
+            n_checkpoints,
+            n_double_mirrors,
+            n_beam_splitters,
+            current_ordering,
+            &mut unique_orderings,
+        );
+
+        // println!("Found {} unique orderings of the tokens to be added", unique_orderings.len());
+
+        let mut result = vec![];
+
+        for unique_ordering in unique_orderings {
+            let mut new_node = self.clone();
+            new_node.tokens_to_be_added = vec![];
+            new_node.tokens_to_be_added_shuffled = unique_ordering;
+            result.push(new_node);
+        }
+
+        result
+    }
+
+    fn cells_with_active_laser(&self) -> Vec<usize> {
+        let mut result = vec![];
+        for (idx, cell) in self.laser_visited.into_iter().enumerate() {
+            if cell[0] || cell[1] || cell[2] || cell[3] {
+                result.push(idx);
+            }
+        }
+        result
+    }
+
+    // return the indices of cells where the laser has visited but there is no token
+    fn empty_cells_with_active_laser(&self) -> Vec<usize> {
+        let mut result = vec![];
+        for (idx, cell) in self.laser_visited.into_iter().enumerate() {
+            if self.cells[idx].is_none() && (cell[0] || cell[1] || cell[2] || cell[3]) {
+                result.push(idx);
+            }
+        }
+        result
     }
 
     fn generate_token_placement_branches_laser_aware(&mut self) -> Vec<Self> {
-        todo!()
+        // this function will make a copy of the node and march the laser forward, get a list of indices with the laser over it but no token present,
+        // and create nodes with the next token to be placed in each of those locations
+        // orientation will get set next time we go back to generate_branches_laser_aware()!
+        let mut result = vec![];
+
+        if let Some(token) = self.tokens_to_be_added_shuffled.pop() {
+            // println!("Got a token of type {:?} of the shuffled vec of tokens to be added", token.type_());
+            let empty_cells_with_active_laser =
+                self.clone().check().empty_cells_with_active_laser();
+            // println!("These cells are empty and have been visited by the laser: {:?}", empty_cells_with_active_laser);
+            for i in SPIRAL_ORDER.iter() {
+                if !empty_cells_with_active_laser.contains(i) {
+                    continue;
+                }
+                // println!("Generating a new node with the token placed at cell {i}");
+                let mut new_node = self.clone();
+                new_node.cells[*i] = Some(token.clone());
+                result.push(new_node)
+            }
+        }
+
+        result
     }
 
     fn generate_token_placement_branches(&mut self) -> Vec<Self> {
@@ -85,6 +284,13 @@ impl SolverNode {
                 if self.cells[*i].is_none() {
                     let mut new_node = self.clone();
                     new_node.cells[*i] = Some(token.clone());
+                    if *i == 14 && token.type_() == &TokenType::Laser {
+                        // TODO delete me
+                        println!(
+                            "Placed laser correctly for puzzle 50, orientation = {:?}",
+                            token.orientation()
+                        );
+                    }
                     result.push(new_node)
                 }
             }
@@ -192,11 +398,12 @@ impl SolverNode {
         // if we have more than that difference of targets which may not be lit,
         // then this piece may or may not point out of the board. but if we have less than or equal to that
         // difference, we must make this target accessible.
-        if self.targets - self.n_targets_which_must_be_lit()
-            <= self.n_targets_which_may_not_be_lit_and_accessible_or_not_oriented()
-        {
-            result.retain(|orientation_idx| !forbidden_directions.contains(orientation_idx));
-        }
+        // TODO debug why this causes puzzle 40 to not solve (TargetMirror at slot 1 can't face south)
+        // if self.targets - self.n_targets_which_must_be_lit()
+        //     <= self.n_targets_which_may_not_be_lit_and_accessible_or_not_oriented()
+        // {
+        //     result.retain(|orientation_idx| !forbidden_directions.contains(orientation_idx));
+        // }
 
         result
     }
@@ -206,12 +413,32 @@ impl SolverNode {
             if let Some(token) = &self.cells[*i] {
                 if token.orientation().is_none() {
                     let mut result = vec![];
+                    if *i == 14 && token.type_() == &TokenType::Laser {
+                        // TODO delete me
+                        let x = self.orientation_iter(token.type_(), *i);
+                        println!(
+                            "Configuring rotation of laser in slot 14, orientation indices = {:?}",
+                            x
+                        );
+                    }
                     for x in self.orientation_iter(token.type_(), *i) {
                         let mut new_node = self.clone();
                         new_node.cells[*i]
                             .as_mut()
                             .expect("We just validated there is a token in this cell")
                             .orientation = Some(Orientation::from_index(x));
+                        // if *i == 14 && new_node.cells[*i].as_ref().unwrap().type_() == &TokenType::Laser && new_node.cells[*i].as_ref().unwrap().orientation == Some(Orientation::West) {
+                        //     // TODO delete me
+                        //     println!("Laser oriented correctly for puzzle 50");
+                        // }
+                        // if *i == 11 && new_node.cells[*i].as_ref().unwrap().type_() == &TokenType::BeamSplitter && new_node.cells[*i].as_ref().unwrap().orientation == Some(Orientation::East) {
+                        //     // TODO delete me
+                        //     println!("Beam splitter on slot 11 oriented correctly for puzzle 50");
+                        // }
+                        // if *i == 10 && new_node.cells[*i].as_ref().unwrap().type_() == &TokenType::TargetMirror && new_node.cells[*i].as_ref().unwrap().orientation == Some(Orientation::South) {
+                        //     // TODO delete me
+                        //     println!("Target on slot 10 oriented correctly for puzzle 50");
+                        // }
                         result.push(new_node);
                     }
                     return result;
@@ -230,14 +457,17 @@ impl SolverNode {
         self.active_lasers.iter().any(|laser| laser.is_some())
     }
 
-    pub fn check(mut self) -> bool {
+    pub fn check(mut self) -> Self {
         self.initialize();
+
         // outer loop: keep cranking the laser states until there are no more lasers
         while self.has_active_lasers() {
+            // println!("active lasers: {:?}", self.active_lasers);
+            // println!("visited lasers: {:?}", self.laser_visited);
             // inner loop: iterate on lasers and do some work on Some()s until no more active lasers
             let mut new_laser_index = 0;
-            let mut new_lasers = [None, None, None];
-            for laser in self.active_lasers.clone().into_iter().flatten() {
+            let mut new_lasers = [None, None, None, None];
+            for laser in self.active_lasers.iter_mut().flatten() {
                 // if the laser is still on the board after going to the next position, check for
                 // a token. if there's a token, do the interactions.
                 // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
@@ -248,20 +478,41 @@ impl SolverNode {
                             .into_iter()
                             .flatten()
                         {
-                            if new_laser_index > 2 {
-                                println!("{:?}", self);
-                                panic!("laser index > 2!");
+                            if self.laser_visited[next_laser_position]
+                                [new_laser_direction.to_index()]
+                            {
+                                // println!("Laser is going in a loop!");
+                                continue;
                             }
-                            new_lasers[new_laser_index] = Some(ActiveLaser {
+                            // println!("setting indices to true (hit piece): self.laser_visited[{}][{}]", next_laser_position, new_laser_direction.to_index());
+                            self.laser_visited[next_laser_position]
+                                [new_laser_direction.to_index()] = true;
+                            if new_laser_index > 3 {
+                                println!("panic config: {:?}", self);
+                                panic!("laser index > 3!");
+                            }
+                            let new_active_laser = ActiveLaser {
                                 cell_index: next_laser_position,
                                 orientation: new_laser_direction,
-                            });
-                            new_laser_index += 1;
+                            };
+                            if !new_lasers
+                                .clone()
+                                .into_iter()
+                                .flatten()
+                                .collect::<Vec<ActiveLaser>>()
+                                .contains(&new_active_laser)
+                            {
+                                new_lasers[new_laser_index] = Some(new_active_laser);
+                                new_laser_index += 1;
+                            }
                         }
                     } else {
-                        if new_laser_index > 2 {
-                            println!("{:?}", self);
-                            panic!("laser index > 2!!");
+                        // println!("setting indices to true (empty cell): self.laser_visited[{}][{}]", next_laser_position, laser.orientation.to_index());
+                        self.laser_visited[next_laser_position][laser.orientation.to_index()] =
+                            true;
+                        if new_laser_index > 3 {
+                            println!("panic config: {:?}", self);
+                            panic!("laser index > 3!!");
                         }
                         new_lasers[new_laser_index] = Some(ActiveLaser {
                             cell_index: next_laser_position,
@@ -274,6 +525,10 @@ impl SolverNode {
             self.active_lasers = new_lasers;
         }
 
+        self
+    }
+
+    pub fn solved(&self) -> bool {
         self.targets == self.count_lit_targets() && self.all_required_targets_lit()
     }
 
