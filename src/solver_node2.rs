@@ -3,7 +3,7 @@ use crate::orientation::Orientation;
 use crate::token::{Token, TokenType};
 use lazy_static::lazy_static;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct SolverNode2 {
     pub cells: [Option<Token>; 25],
     pub tokens_to_be_added: Vec<Token>,
@@ -12,9 +12,69 @@ pub struct SolverNode2 {
 }
 
 impl SolverNode2 {
-    // returns a None if this is truly a leaf
-    pub fn generate_branches(&mut self) -> Option<Vec<Self>> {
-        todo!()
+    // returns Ok() if we hit the solution, or Err(new_nodes) otherwise
+    pub fn generate_branches(&mut self) -> Result<[Option<Token>; 25], Vec<Self>> {
+        // place the laser if it's not been added to the grid and rotated
+        if !self.laser_placed_and_rotated() {
+            return Err(self.generate_laser_placement_branches());
+        }
+
+        // next, shuffle the remaining pieces to be added
+        if !self.tokens_to_be_added.is_empty() {
+            return Err(self.generate_shuffled_tokens_to_be_added_branches());
+        }
+
+        // now, make a checker. it will march the laser forward.
+        // it will return Ok() if we hit the solution, or Err(new_nodes) otherwise
+        self.clone_to_checker().check().generate_branches()
+    }
+
+    fn generate_laser_placement_branches(&mut self) -> Vec<Self> {
+        if self.laser_placed_and_rotated() {
+            // (we shouldn't enter this branch) the laser is already placed and rotated so no branches
+            vec![]
+        } else if self.laser_placed() {
+            // the laser has been placed but not rotated, so we just need orientation branches for the laser
+            self.generate_orientation_branches_at_cell(
+                self.laser_position()
+                    .expect("We just validated that the laser is placed"),
+            )
+        } else {
+            // the laser hasn't been placed or rotated
+            // get the laser out of tokens_to_be_added
+            self.tokens_to_be_added
+                .retain(|token| token.type_() != &TokenType::Laser);
+            let laser = Token::new(TokenType::Laser, None, false);
+            let mut result = vec![];
+            for i in SPIRAL_ORDER.iter() {
+                // find all unoccupied cells
+                if self.cells[*i].is_none() {
+                    // make a copy of this node, place the laser token in this unoccupied slot, and make new nodes for all the orientations of the laser
+                    let mut new_node = self.clone();
+                    new_node.cells[*i] = Some(laser.clone());
+                    let new_nodes = new_node.generate_orientation_branches_at_cell(*i);
+                    result.extend(new_nodes);
+                }
+            }
+            result
+        }
+    }
+
+    pub fn generate_orientation_branches_at_cell(&self, cell_index: usize) -> Vec<Self> {
+        if let Some(token) = self.cells[cell_index].as_ref() {
+            let mut result = vec![];
+            for orientation_index in self.orientation_iter(token.type_(), cell_index) {
+                let mut new_node = self.clone();
+                new_node.cells[cell_index]
+                    .as_mut()
+                    .expect("We just validated there is a token in this cell")
+                    .orientation = Some(Orientation::from_index(orientation_index));
+                result.push(new_node);
+            }
+            result
+        } else {
+            vec![]
+        }
     }
 
     pub fn new(
@@ -30,8 +90,26 @@ impl SolverNode2 {
         }
     }
 
+    pub fn reset_tokens(&mut self) {
+        self.cells
+            .as_mut()
+            .into_iter()
+            .flatten()
+            .for_each(|token| token.reset())
+    }
+
     fn clone_to_checker(&self) -> Checker {
         Checker::from_solver_node(self.clone())
+    }
+
+    fn laser_position(&self) -> Option<usize> {
+        self.cells.as_ref().iter().position(|token| {
+            if let Some(token) = token {
+                token.type_() == &TokenType::Laser
+            } else {
+                false
+            }
+        })
     }
 
     fn laser_placed(&self) -> bool {
@@ -42,7 +120,15 @@ impl SolverNode2 {
             .any(|token| token.type_() == &TokenType::Laser)
     }
 
-    fn all_placed_tokens_have_orientation_set(&self) -> bool {
+    fn laser_placed_and_rotated(&self) -> bool {
+        self.cells
+            .as_ref()
+            .iter()
+            .flatten()
+            .any(|token| token.type_() == &TokenType::Laser && token.orientation().is_some())
+    }
+
+    pub fn all_placed_tokens_have_orientation_set(&self) -> bool {
         self.cells
             .as_ref()
             .iter()
@@ -383,7 +469,7 @@ impl SolverNode2 {
 }
 
 lazy_static! {
-    static ref SPIRAL_ORDER: [usize; 25] = [
+    pub static ref SPIRAL_ORDER: [usize; 25] = [
         0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5, 6, 7, 8, 13, 18, 17, 16, 11, 12,
     ];
 }

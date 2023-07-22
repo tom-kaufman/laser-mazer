@@ -36,6 +36,13 @@ impl Token {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.lit = false;
+        if self.target_lit.is_some() {
+            self.target_lit = Some(false);
+        }
+    }
+
     // getter for private field
     pub fn type_(&self) -> &TokenType {
         &self.type_
