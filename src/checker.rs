@@ -1,10 +1,10 @@
 use crate::solver_node::active_laser::ActiveLaser;
-use crate::solver_node2::{SolverNode2, SPIRAL_ORDER};
+use crate::solver_node::{SolverNode, SPIRAL_ORDER};
 use crate::token::{Token, TokenType};
 
 #[derive(Clone, Default, Debug)]
 pub struct Checker {
-    grid: SolverNode2,
+    grid: SolverNode,
     // there can be 4 active lasers if 2 perpindicular lasers hit the same beam splitter
     active_lasers: [Option<ActiveLaser>; 4],
     laser_visited: [[bool; 4]; 25],
@@ -41,7 +41,6 @@ impl Checker {
                             if self.laser_visited[next_laser_position]
                                 [new_laser_direction.to_index()]
                             {
-                                // println!("Laser is going in a loop!");
                                 continue;
                             }
                             self.laser_visited[next_laser_position]
@@ -86,7 +85,7 @@ impl Checker {
         self
     }
 
-    pub fn generate_branches(mut self) -> Result<[Option<Token>; 25], Vec<SolverNode2>> {
+    pub fn generate_branches(mut self) -> Result<[Option<Token>; 25], Vec<SolverNode>> {
         // - march the laser forward until no active lasers
         // - if a laser visits an unoriented token: record the index and terminate that active laser
         // - if the laser visted unoriented tokens: generate new branches for orienting those pieces
@@ -103,14 +102,14 @@ impl Checker {
         }
     }
 
-    fn generate_branches_after_check(&mut self) -> Vec<SolverNode2> {
+    fn generate_branches_after_check(&mut self) -> Vec<SolverNode> {
         if !self.unoriented_occupied_cells.is_empty() {
             // if the laser hit an unoriented token, populate the next branches by setting the orientation of that token
             self.unoriented_occupied_cells
                 .iter()
                 .map(|cell_index| self.grid.generate_orientation_branches_at_cell(*cell_index))
                 .flatten()
-                .collect::<Vec<SolverNode2>>()
+                .collect::<Vec<SolverNode>>()
         } else if let Some(token) = self.grid.tokens_to_be_added_shuffled.pop() {
             // if the laser only hit oriented tokens, try placing the next token in any of the cells the laser visited but are not occupied by a token
             let empty_cells_with_active_laser = self.empty_cells_with_active_laser();
@@ -130,7 +129,7 @@ impl Checker {
         }
     }
 
-    pub fn from_solver_node(solver_node: SolverNode2) -> Self {
+    pub fn from_solver_node(solver_node: SolverNode) -> Self {
         Self {
             grid: solver_node,
             ..Default::default()

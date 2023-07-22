@@ -8,9 +8,6 @@ use token::{Token, TokenType};
 mod solver_node;
 use solver_node::SolverNode;
 
-mod solver_node2;
-use solver_node2::SolverNode2;
-
 mod checker;
 
 /// LaserMazeSolver: main struct. initialize this with the puzzle -> run .solve()
@@ -20,7 +17,7 @@ mod checker;
 struct LaserMazeSolver {
     initial_grid_config: [Option<Token>; 25],
     tokens_to_be_added: Vec<Token>,
-    stack: Vec<SolverNode2>,
+    stack: Vec<SolverNode>,
     targets: u8,
 }
 
@@ -30,7 +27,7 @@ impl LaserMazeSolver {
         tokens_to_be_added: Vec<Token>,
         targets: u8,
     ) -> Self {
-        let initial_solver_node = SolverNode2::new(
+        let initial_solver_node = SolverNode::new(
             initial_grid_config.clone(),
             tokens_to_be_added.clone(),
             targets,
