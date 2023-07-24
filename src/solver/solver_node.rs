@@ -1,6 +1,6 @@
-use crate::checker::Checker;
-use crate::orientation::Orientation;
-use crate::token::{Token, TokenType};
+use crate::solver::checker::Checker;
+use crate::solver::orientation::Orientation;
+use crate::solver::token::{Token, TokenType};
 pub mod active_laser;
 use lazy_static::lazy_static;
 

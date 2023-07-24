@@ -1,4 +1,4 @@
-use crate::orientation::Orientation;
+use crate::solver::orientation::Orientation;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ActiveLaser {

@@ -1,6 +1,6 @@
-use crate::solver_node::active_laser::ActiveLaser;
-use crate::solver_node::{SolverNode, SPIRAL_ORDER};
-use crate::token::{Token, TokenType};
+use crate::solver::solver_node::active_laser::ActiveLaser;
+use crate::solver::solver_node::{SolverNode, SPIRAL_ORDER};
+use crate::solver::token::{Token, TokenType};
 
 #[derive(Clone, Default, Debug)]
 pub struct Checker {
