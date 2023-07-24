@@ -107,8 +107,7 @@ impl Checker {
             // if the laser hit an unoriented token, populate the next branches by setting the orientation of that token
             self.unoriented_occupied_cells
                 .iter()
-                .map(|cell_index| self.grid.generate_orientation_branches_at_cell(*cell_index))
-                .flatten()
+                .flat_map(|cell_index| self.grid.generate_orientation_branches_at_cell(*cell_index))
                 .collect::<Vec<SolverNode>>()
         } else if let Some(token) = self.grid.tokens_to_be_added_shuffled.pop() {
             // if the laser only hit oriented tokens, try placing the next token in any of the cells the laser visited but are not occupied by a token

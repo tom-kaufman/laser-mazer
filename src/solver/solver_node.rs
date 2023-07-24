@@ -94,7 +94,7 @@ impl SolverNode {
     pub fn reset_tokens(&mut self) {
         self.cells
             .as_mut()
-            .into_iter()
+            .iter_mut()
             .flatten()
             .for_each(|token| token.reset())
     }
@@ -464,7 +464,7 @@ impl SolverNode {
     }
 
     pub fn check(self) -> Checker {
-        let mut checker = self.clone_to_checker();
+        let checker = self.clone_to_checker();
         checker.check()
     }
 }
