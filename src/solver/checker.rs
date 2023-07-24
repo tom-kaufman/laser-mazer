@@ -57,8 +57,7 @@ impl Checker {
                                 .clone()
                                 .into_iter()
                                 .flatten()
-                                .collect::<Vec<ActiveLaser>>()
-                                .contains(&new_active_laser)
+                                .any(|laser| laser == new_active_laser)
                             {
                                 new_lasers[new_laser_index] = Some(new_active_laser);
                                 new_laser_index += 1;
@@ -135,6 +134,7 @@ impl Checker {
         }
     }
 
+    #[allow(dead_code)]
     fn cells_with_active_laser(&self) -> Vec<usize> {
         let mut result = vec![];
         for (idx, cell) in self.laser_visited.into_iter().enumerate() {

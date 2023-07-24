@@ -22,6 +22,7 @@ pub struct LaserMazeSolver {
 }
 
 impl LaserMazeSolver {
+    #[allow(dead_code)]
     pub fn new(
         initial_grid_config: [Option<Token>; 25],
         tokens_to_be_added: Vec<Token>,

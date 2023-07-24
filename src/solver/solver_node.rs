@@ -78,6 +78,7 @@ impl SolverNode {
         }
     }
 
+    #[allow(dead_code)]
     pub fn new(
         initial_grid_config: [Option<Token>; 25],
         tokens_to_be_added: Vec<Token>,
@@ -129,6 +130,7 @@ impl SolverNode {
             .any(|token| token.type_() == &TokenType::Laser && token.orientation().is_some())
     }
 
+    #[allow(dead_code)]
     pub fn all_placed_tokens_have_orientation_set(&self) -> bool {
         self.cells
             .as_ref()
@@ -399,8 +401,7 @@ impl SolverNode {
             if neighboring_cell_indices
                 .into_iter()
                 .flatten()
-                .collect::<Vec<usize>>()
-                .contains(&cell_index)
+                .any(|idx| idx == cell_index)
             {
                 // now, we know that the token is impacted by the cell blocker.
                 // if the cell blocker is on a non-corner edge, it's unambiguous which direction the laser cannot face
@@ -463,6 +464,7 @@ impl SolverNode {
         [None, None]
     }
 
+    #[allow(dead_code)]
     pub fn check(self) -> Checker {
         let checker = self.clone_to_checker();
         checker.check()
