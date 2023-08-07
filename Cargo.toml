@@ -9,4 +9,7 @@ edition = "2021"
 opt-level = 3
 
 [dependencies]
+eframe = "0.22.0"
+egui_extras = { version = "0.22.0", features = ["image"] }
 lazy_static = "1.4.0"
+tokio = { version = "1.29.1", features = ["full"] }

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-mod orientation;
+pub mod orientation;
 
-mod token;
+pub mod token;
 use token::{Token, TokenType};
 
 mod solver_node;
