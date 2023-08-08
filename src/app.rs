@@ -57,13 +57,13 @@ impl Default for MyApp {
 }
 
 impl App for MyApp {
-    fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         // responses don't have a default value, and the closure is in its own scope,
         // so we make an Option<[Response; N]> and unwrap it later
         let mut bank_responses = None;
         let mut grid_responses = None;
         let mut to_be_added_responses = None;
-        egui::CentralPanel::default().show(&ctx, |ui| {
+        egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     ui.heading("Bank");
@@ -137,7 +137,7 @@ impl MyApp {
             .chain(bank_responses.iter())
             .chain(to_be_added_responses.iter())
             .enumerate()
-            .find(|(idx, response)| response.dragged());
+            .find(|(_idx, response)| response.dragged());
         // get the response that is hovered
         // cells with None Token may have hover Sense, but not Dragged Sense; this
         // prevents use from short circuiting find() from the Cell we are dragging
@@ -146,7 +146,7 @@ impl MyApp {
             .chain(bank_responses.iter())
             .chain(to_be_added_responses.iter())
             .enumerate()
-            .find(|(idx, response)| response.hovered() && !response.dragged());
+            .find(|(_idx, response)| response.hovered() && !response.dragged());
 
         // restructure the tuples returned from find. we only care about the values if we have both Some()
         if let (Some((dragged_index, _)), Some((hovered_index, _))) =
@@ -227,7 +227,7 @@ impl MyApp {
             .chain(bank_responses.iter())
             .chain(to_be_added_responses.iter())
             .enumerate()
-            .find(|(idx, response)| response.hovered())
+            .find(|(_idx, response)| response.hovered())
         {
             if let Some(token) = match hovered_index {
                 0..=24 => self.tokens_grid[hovered_index].as_mut(),
@@ -267,6 +267,7 @@ impl MyApp {
         self.generate_solver().solve()
     }
 
+    #[allow(clippy::needless_range_loop)]
     fn solve(&mut self) -> bool {
         if let Some(solved_grid) = self.run_solver() {
             self.tokens_to_be_added = Default::default();
@@ -288,10 +289,8 @@ impl MyApp {
         }
 
         let mut to_be_added = vec![];
-        for token in self.tokens_to_be_added.iter() {
-            if let Some(token) = token {
-                to_be_added.push(token.clone());
-            }
+        for token in self.tokens_to_be_added.iter().flatten() {
+            to_be_added.push(token.clone());
         }
 
         LaserMazeSolver::new(grid, to_be_added, 1) // TODO add input for # target

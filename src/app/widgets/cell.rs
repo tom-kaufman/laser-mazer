@@ -2,9 +2,8 @@ pub mod collections;
 
 use eframe::{
     egui::{vec2, Context, Image, Sense},
-    epaint::{pos2, Color32, Rect, TextureId, Vec2},
+    epaint::{pos2, Color32, Rect, Vec2},
 };
-use egui_extras::RetainedImage;
 
 use crate::{
     app::resources::ImageBank,
@@ -55,7 +54,7 @@ impl Cell {
         response
     }
 
-    fn get_token_image<'a>(
+    fn get_token_image(
         ctx: &Context,
         token: &Option<Token>,
         images: &ImageBank,

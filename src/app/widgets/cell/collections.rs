@@ -76,6 +76,7 @@ impl ToBeAdded {
         Self { cell_size }
     }
 
+    #[allow(clippy::needless_range_loop)]
     pub fn show(
         self,
         ui: &mut eframe::egui::Ui,

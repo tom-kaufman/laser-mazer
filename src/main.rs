@@ -2,7 +2,6 @@
 
 mod app;
 mod solver;
-use app::MyApp;
 
 use std::time::Duration;
 
@@ -30,7 +29,7 @@ fn main() {
             initial_window_size: Some(eframe::egui::vec2(1600., 900.)),
             ..Default::default()
         },
-        Box::new(|_cc| Box::new(MyApp::default())),
+        Box::new(|_cc| Box::<app::MyApp>::default()),
     )
     .expect("Failed to launch app");
 }
