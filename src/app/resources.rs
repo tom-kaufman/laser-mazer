@@ -20,18 +20,34 @@ impl Default for ImageBank {
 
 impl ImageBank {
     fn cell_empty() -> RetainedImage {
-        RetainedImage::from_image_bytes("cell_empty.png", include_bytes!(r#"..\..\assets\cell_empty.png"#)).expect("failed to load cell_empty.png")
+        RetainedImage::from_image_bytes(
+            "cell_empty.png",
+            include_bytes!(r#"..\..\assets\cell_empty.png"#),
+        )
+        .expect("failed to load cell_empty.png")
     }
-    
+
     fn cell_empty_hovered() -> RetainedImage {
-        RetainedImage::from_image_bytes("cell_empty_hovered.png", include_bytes!(r#"..\..\assets\cell_empty_hovered.png"#)).expect("failed to load cell_empty_hovered.png")
+        RetainedImage::from_image_bytes(
+            "cell_empty_hovered.png",
+            include_bytes!(r#"..\..\assets\cell_empty_hovered.png"#),
+        )
+        .expect("failed to load cell_empty_hovered.png")
     }
-    
+
     fn token_laser() -> RetainedImage {
-        RetainedImage::from_image_bytes("token_laser.png", include_bytes!(r#"..\..\assets\token_laser.png"#)).expect("failed to load token_laser.png")
+        RetainedImage::from_image_bytes(
+            "token_laser.png",
+            include_bytes!(r#"..\..\assets\token_laser.png"#),
+        )
+        .expect("failed to load token_laser.png")
     }
-    
+
     fn token_laser_unoriented() -> RetainedImage {
-        RetainedImage::from_image_bytes("token_laser_unoriented.png", include_bytes!(r#"..\..\assets\token_laser_unoriented.png"#)).expect("failed to load token_laser_unoriented.png")
+        RetainedImage::from_image_bytes(
+            "token_laser_unoriented.png",
+            include_bytes!(r#"..\..\assets\token_laser_unoriented.png"#),
+        )
+        .expect("failed to load token_laser_unoriented.png")
     }
 }
