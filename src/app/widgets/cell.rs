@@ -1,3 +1,5 @@
+pub mod collections;
+
 use eframe::{
     egui::{vec2, Context, Image, Sense},
     epaint::{pos2, Color32, Rect, TextureId, Vec2},
