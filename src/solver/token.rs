@@ -154,6 +154,12 @@ impl Token {
             }
         }
     }
+
+    pub fn toggle_must_light(&mut self) {
+        if self.type_ == TokenType::TargetMirror {
+            self.must_light = !self.must_light;
+        }
+    }
 }
 
 #[derive(PartialEq, Copy, Clone, Eq, Hash, Debug, PartialOrd, Ord)]
