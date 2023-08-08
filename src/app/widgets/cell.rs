@@ -1,4 +1,4 @@
-use eframe::{egui::{Image, Sense, vec2, Context}, epaint::{Rect, Color32, pos2, TextureId}};
+use eframe::{egui::{Image, Sense, vec2, Context}, epaint::{Rect, Color32, pos2, TextureId, Vec2}};
 use egui_extras::RetainedImage;
 
 use crate::{solver::token::{TokenType, Token}, app::resources::ImageBank};
@@ -27,8 +27,7 @@ impl Cell {
             let painter = ui.painter();
             painter.image(image.texture_id(ui.ctx()), rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
 
-            if let Some(token_image) = Self::get_token_image(ui.ctx(), token, images) {
-                println!("After: {:?}", token_image.size());
+            if let Some(token_image) = Self::get_token_image(ui.ctx(), token, images, rect.size()) {
                 token_image.paint_at(ui, rect)
             }
         }
@@ -36,7 +35,7 @@ impl Cell {
         response
     }
 
-    fn get_token_image<'a>(ctx: &Context, token: &Option<Token>, images: &ImageBank) -> Option<Image> {
+    fn get_token_image<'a>(ctx: &Context, token: &Option<Token>, images: &ImageBank, rect_size: Vec2) -> Option<Image> {
         let mut rotation_radians = 0.;
         let unrotated_image = match token {
             Some(token) => {
@@ -59,6 +58,6 @@ impl Cell {
             }
             None => { return None }
         };
-        Some(Image::new(unrotated_image.texture_id(ctx), unrotated_image.size_vec2()).rotate(rotation_radians, vec2(0.375, 0.375)))
+        Some(Image::new(unrotated_image.texture_id(ctx), rect_size).rotate(rotation_radians, vec2(0.5, 0.5)))
     }
 }

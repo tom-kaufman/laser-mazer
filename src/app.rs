@@ -46,16 +46,16 @@ impl App for MyApp {
             ui.label("Hello");
 
             let laser = Some(Token::new(TokenType::Laser, Some(Orientation::East), false));
-            Cell::new(150.).show(ui, &self.images, &laser);
+            Cell::new(100.).show(ui, &self.images, &laser);
             
             let laser_south = Some(Token::new(TokenType::Laser, Some(Orientation::South), false));
-            Cell::new(150.).show(ui, &self.images, &laser_south);
+            Cell::new(100.).show(ui, &self.images, &laser_south);
             
-            let laser_west = Some(Token::new(TokenType::Laser, Some(Orientation::West), false));
-            Cell::new(150.).show(ui, &self.images, &laser_west);
+            let laser_west = Some(Token::new(TokenType::Laser, None, false));
+            Cell::new(100.).show(ui, &self.images, &laser_west);
             
             let laser_north = Some(Token::new(TokenType::Laser, Some(Orientation::North), false));
-            Cell::new(150.).show(ui, &self.images, &laser_north);
+            Cell::new(100.).show(ui, &self.images, &laser_north);
         });
     }
 }
