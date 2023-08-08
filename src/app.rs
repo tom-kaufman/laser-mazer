@@ -1,11 +1,13 @@
 use crate::solver::orientation::Orientation;
 use crate::solver::token::Token;
 use crate::solver::token::TokenType;
+use crate::solver::LaserMazeSolver;
 
 use eframe::egui;
 use eframe::App;
 
 mod widgets;
+use eframe::egui::Key;
 use widgets::cell::collections::Bank;
 use widgets::cell::collections::Grid;
 use widgets::cell::collections::ToBeAdded;
@@ -22,6 +24,8 @@ pub struct MyApp {
     images: resources::ImageBank,
 
     token_move_indices: Option<(usize, usize)>,
+
+    message_text: String,
 }
 
 impl Default for MyApp {
@@ -47,6 +51,7 @@ impl Default for MyApp {
             tokens_to_be_added: Default::default(),
             images: resources::ImageBank::default(),
             token_move_indices: Default::default(),
+            message_text: Default::default(),
         }
     }
 }
@@ -59,36 +64,52 @@ impl App for MyApp {
         let mut grid_responses = None;
         let mut to_be_added_responses = None;
         egui::CentralPanel::default().show(&ctx, |ui| {
-            ui.vertical(|ui| {
-                ui.horizontal(|ui| {
-                    ui.vertical_centered(|ui| {
-                        bank_responses = Some(Bank::new(self.cell_size).show(
-                            ui,
-                            &self.images,
-                            &self.tokens_bank,
-                        ));
-                    });
-                    ui.vertical_centered(|ui| {
-                        grid_responses = Some(Grid::new(self.cell_size).show(
-                            ui,
-                            &self.images,
-                            &self.tokens_grid,
-                        ));
-                    });
+            ui.horizontal(|ui| {
+                ui.vertical(|ui| {
+                    ui.heading("Bank");
+                    bank_responses =
+                        Some(Bank::new(self.cell_size).show(ui, &self.images, &self.tokens_bank));
                 });
-                to_be_added_responses = Some(ToBeAdded::new(self.cell_size).show(
-                    ui,
-                    &self.images,
-                    &self.tokens_to_be_added,
-                ));
+                ui.vertical(|ui| {
+                    ui.heading("To Be Added");
+                    to_be_added_responses = Some(ToBeAdded::new(self.cell_size * 5. / 6.).show(
+                        ui,
+                        &self.images,
+                        &self.tokens_to_be_added,
+                    ));
+                    ui.heading("Grid");
+                    grid_responses =
+                        Some(Grid::new(self.cell_size).show(ui, &self.images, &self.tokens_grid));
+                });
             });
+            if ui.button("Check").clicked() {
+                if self.check() {
+                    self.message_text = "This laser maze is solved!".into()
+                } else {
+                    self.message_text = "This laser maze is not solved.".into()
+                }
+            }
+            if ui.button("Solve").clicked() {
+                if self.solve() {
+                    self.message_text = "Here's the solution!".into()
+                } else {
+                    self.message_text = "This laser maze is not solvable!".into()
+                }
+            }
+            ui.label(format!("Message: {}", self.message_text));
         });
 
-        self.handle_cell_responses(
+        self.handle_moving_tokens(
             ctx,
-            grid_responses.unwrap(),
-            bank_responses.unwrap(),
-            to_be_added_responses.unwrap(),
+            grid_responses.as_ref().unwrap(),
+            bank_responses.as_ref().unwrap(),
+            to_be_added_responses.as_ref().unwrap(),
+        );
+        self.handle_orientation_shortcuts(
+            ctx,
+            grid_responses.as_ref().unwrap(),
+            bank_responses.as_ref().unwrap(),
+            to_be_added_responses.as_ref().unwrap(),
         );
     }
 }
@@ -96,12 +117,12 @@ impl App for MyApp {
 impl MyApp {
     // handles the Response arrays from Bank, Grid, and ToBeAdded cell collections;
     // figures out if we are trying to click and drag to move a Token between cells
-    fn handle_cell_responses(
+    fn handle_moving_tokens(
         &mut self,
         ctx: &eframe::egui::Context,
-        grid_responses: [eframe::egui::Response; 25],
-        bank_responses: [eframe::egui::Response; 11],
-        to_be_added_responses: [eframe::egui::Response; 6],
+        grid_responses: &[eframe::egui::Response; 25],
+        bank_responses: &[eframe::egui::Response; 11],
+        to_be_added_responses: &[eframe::egui::Response; 6],
     ) {
         // store the indices of the moved tokens from last frame, before we overwrite them
         let last_frame_token_move_indices = self.token_move_indices;
@@ -187,6 +208,107 @@ impl MyApp {
                         panic!("impossible case because of fixed array lengths")
                     }
                 }
+            }
+        }
+    }
+
+    fn handle_orientation_shortcuts(
+        &mut self,
+        ctx: &eframe::egui::Context,
+        grid_responses: &[eframe::egui::Response; 25],
+        bank_responses: &[eframe::egui::Response; 11],
+        to_be_added_responses: &[eframe::egui::Response; 6],
+    ) {
+        // get the response that is hovered
+        // cells with None Token may have hover Sense, but not Dragged Sense; this
+        // prevents use from short circuiting find() from the Cell we are dragging
+        if let Some((hovered_index, _)) = grid_responses
+            .iter()
+            .chain(bank_responses.iter())
+            .chain(to_be_added_responses.iter())
+            .enumerate()
+            .find(|(idx, response)| response.hovered())
+        {
+            if let Some(token) = match hovered_index {
+                0..=24 => self.tokens_grid[hovered_index].as_mut(),
+                25..=35 => self.tokens_bank[hovered_index - 25].as_mut(),
+                36..=41 => self.tokens_to_be_added[hovered_index - 36].as_mut(),
+                _ => {
+                    panic!("impossible case because of fixed array lengths")
+                }
+            } {
+                if ctx.input(|i| i.key_pressed(Key::W)) {
+                    token.orientation = Some(Orientation::North);
+                } else if ctx.input(|i| i.key_pressed(Key::D)) {
+                    token.orientation = Some(Orientation::East);
+                } else if ctx.input(|i| i.key_pressed(Key::S)) {
+                    token.orientation = Some(Orientation::South);
+                } else if ctx.input(|i| i.key_pressed(Key::A)) {
+                    token.orientation = Some(Orientation::West);
+                } else if ctx.input(|i| i.key_pressed(Key::R)) {
+                    token.orientation = None;
+                } else if ctx.input(|i| i.key_pressed(Key::M)) {
+                    token.toggle_must_light();
+                }
+            }
+        }
+    }
+
+    fn check(&self) -> bool {
+        self.generate_solver()
+            .stack
+            .pop()
+            .expect("LaserMazeSolver initializes with a node")
+            .check()
+            .solved()
+    }
+
+    fn run_solver(&self) -> Option<[Option<Token>; 25]> {
+        self.generate_solver().solve()
+    }
+
+    fn solve(&mut self) -> bool {
+        if let Some(solved_grid) = self.run_solver() {
+            self.tokens_to_be_added = Default::default();
+            for i in 0..25 {
+                let transformed_index = Self::translate_model_index(i);
+                self.tokens_grid[transformed_index] = solved_grid[i].clone()
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    fn generate_solver(&self) -> LaserMazeSolver {
+        let mut grid: [Option<Token>; 25] = Default::default();
+        for i in 0..25 {
+            let transformed_index = Self::translate_model_index(i);
+            grid[transformed_index] = self.tokens_grid[i].clone();
+        }
+
+        let mut to_be_added = vec![];
+        for token in self.tokens_to_be_added.iter() {
+            if let Some(token) = token {
+                to_be_added.push(token.clone());
+            }
+        }
+
+        LaserMazeSolver::new(grid, to_be_added, 1) // TODO add input for # target
+    }
+
+    // because of how egui adds items, the gui has cell 0 at top left, while the model
+    // was built with cell 0 as bottom left.
+    // luckily this operation is symmetric so we don't need a similar match statement
+    pub fn translate_model_index(index: usize) -> usize {
+        match index {
+            0..=4 => index + 20,
+            5..=9 => index + 10,
+            10..=14 => index,
+            15..=19 => index - 10,
+            20..=24 => index - 20,
+            _ => {
+                panic!("index out of grid range")
             }
         }
     }
