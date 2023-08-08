@@ -63,29 +63,33 @@ impl Cell {
     ) -> Option<Image> {
         let mut rotation_radians = 0.;
         let unrotated_image = match token {
-            Some(token) => {
-                match &token.orientation {
-                    Some(orientation) => {
-                        rotation_radians = (90.0 * (orientation.to_index() as f32)).to_radians();
-                        match token.type_() {
-                            TokenType::Laser => &images.token_laser,
-                            _ => {
-                                // TODO
-                                &images.token_laser_unoriented
-                            }
-                        }
-                    }
-                    None => {
-                        match token.type_() {
-                            TokenType::Laser => &images.token_laser_unoriented,
-                            _ => {
-                                // TODO
-                                &images.token_laser_unoriented
-                            }
-                        }
+            Some(token) => match &token.orientation {
+                Some(orientation) => {
+                    rotation_radians = (90.0 * (orientation.to_index() as f32)).to_radians();
+                    match token.type_() {
+                        TokenType::Laser => &images.token_laser,
+                        TokenType::TargetMirror => match token.must_light() {
+                            true => &images.token_target_mirror_must_light,
+                            false => &images.token_target_mirror,
+                        },
+                        TokenType::BeamSplitter => &images.token_beam_splitter,
+                        TokenType::DoubleMirror => &images.token_double_mirror,
+                        TokenType::Checkpoint => &images.token_checkpoint,
+                        TokenType::CellBlocker => &images.token_cell_blocker,
                     }
                 }
-            }
+                None => match token.type_() {
+                    TokenType::Laser => &images.token_laser_unoriented,
+                    TokenType::TargetMirror => match token.must_light() {
+                        true => &images.token_target_mirror_must_light_unoriented,
+                        false => &images.token_target_mirror_unoriented,
+                    },
+                    TokenType::BeamSplitter => &images.token_beam_splitter_unoriented,
+                    TokenType::DoubleMirror => &images.token_double_mirror_unoriented,
+                    TokenType::Checkpoint => &images.token_checkpoint_unoriented,
+                    TokenType::CellBlocker => &images.token_cell_blocker,
+                },
+            },
             None => return None,
         };
         Some(
