@@ -8,6 +8,7 @@ use eframe::App;
 
 mod widgets;
 use eframe::egui::Key;
+use eframe::egui::Slider;
 use widgets::cell::collections::Bank;
 use widgets::cell::collections::Grid;
 use widgets::cell::collections::ToBeAdded;
@@ -20,6 +21,7 @@ pub struct MyApp {
     tokens_grid: [Option<Token>; 25],
     tokens_to_be_added: [Option<Token>; 6],
     tokens_bank: [Option<Token>; 11],
+    targets: u8,
 
     images: resources::ImageBank,
 
@@ -49,6 +51,7 @@ impl Default for MyApp {
             tokens_grid: Default::default(),
             tokens_bank,
             tokens_to_be_added: Default::default(),
+            targets: 1,
             images: resources::ImageBank::default(),
             token_move_indices: Default::default(),
             message_text: Default::default(),
@@ -72,7 +75,7 @@ impl App for MyApp {
                 });
                 ui.vertical(|ui| {
                     ui.heading("To Be Added");
-                    to_be_added_responses = Some(ToBeAdded::new(self.cell_size * 5. / 6.).show(
+                    to_be_added_responses = Some(ToBeAdded::new(self.cell_size * 0.82).show(
                         ui,
                         &self.images,
                         &self.tokens_to_be_added,
@@ -81,6 +84,10 @@ impl App for MyApp {
                     grid_responses =
                         Some(Grid::new(self.cell_size).show(ui, &self.images, &self.tokens_grid));
                 });
+            });
+            ui.horizontal(|ui| {
+                ui.label("Number of Targets:");
+                ui.add(Slider::new(&mut self.targets, 1..=3));
             });
             if ui.button("Check").clicked() {
                 if self.check() {
@@ -293,7 +300,7 @@ impl MyApp {
             to_be_added.push(token.clone());
         }
 
-        LaserMazeSolver::new(grid, to_be_added, 1) // TODO add input for # target
+        LaserMazeSolver::new(grid, to_be_added, self.targets) // TODO add input for # target
     }
 
     // because of how egui adds items, the gui has cell 0 at top left, while the model
