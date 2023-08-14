@@ -7,11 +7,14 @@ use std::time::Duration;
 
 use tokio::runtime::Runtime;
 
-use crate::{solver::{
-    orientation::Orientation,
-    token::{Token, TokenType},
-    LaserMazeSolver,
-}, app::MyApp};
+use crate::{
+    app::MyApp,
+    solver::{
+        orientation::Orientation,
+        token::{Token, TokenType},
+        LaserMazeSolver,
+    },
+};
 use std::time;
 
 fn main() {

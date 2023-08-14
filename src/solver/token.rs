@@ -97,15 +97,13 @@ impl Token {
         match self.type_ {
             TokenType::Laser => [Some(Orientation::North), None],
 
-            TokenType::Checkpoint => {
-                self.lit = true;
-                match laser_inbound_orientation {
-                    Orientation::North | Orientation::South => {
-                        [Some(laser_inbound_orientation), None]
-                    }
-                    Orientation::West | Orientation::East => [None, None],
+            TokenType::Checkpoint => match laser_inbound_orientation {
+                Orientation::North | Orientation::South => {
+                    self.lit = true;
+                    [Some(laser_inbound_orientation), None]
                 }
-            }
+                Orientation::West | Orientation::East => [None, None],
+            },
 
             TokenType::TargetMirror => {
                 self.lit = true;
