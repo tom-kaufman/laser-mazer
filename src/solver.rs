@@ -70,7 +70,7 @@ impl LaserMazeSolver {
             let (min_count, max_count) = match token_type {
                 TokenType::Laser => (1, 1),
                 TokenType::TargetMirror => (1, 5),
-                TokenType::BeamSplitter => (self.targets - 1, self.targets - 1),
+                TokenType::BeamSplitter => (0, 2),  // previously I thought `n_targets = 1 + n_beam_splitters`, but bonus challenge 98, 99 contracdict this (self.targets - 1, self.targets - 1),
                 TokenType::DoubleMirror => (0, 1),
                 TokenType::Checkpoint => (0, 1),
                 TokenType::CellBlocker => (0, 1),

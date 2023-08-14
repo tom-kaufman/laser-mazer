@@ -1,3 +1,24 @@
+# TODO
+## Docs
+- [ ] Rewrite
+## GUI
+- [ ] load a "challenge" (starting Grid config + the pieces you can place to solve it)
+- [ ] wipe board back to challenge
+- [ ] save new challenges to file
+- [ ] include the challenges from the official game
+- [ ] show the laser's path
+- [ ] improved layoutca
+- [ ] better way to visualize results other than the message label at bottom left
+- [ ] show controls (WASD, R, M are used but no visual indicator)
+- [ ] put the token icon on mouse cursor when dragging it to move it between cells
+- [ ] swap tokens places if you drag a token onto another cell already holding a token
+- [ ] cursor changes on hovering tokens
+- [ ] ctrl z to undo moves
+- [ ] shortcut keys to move pieces back to bank or "to be added"
+## Solver backend
+- [ ] Eliminate panics
+- [ ] Error enum
+
 # How many possible GameBoard configurations are there?
 - 12 game pieces; any # from 2-12 pieces may be included; actual # pieces in puzzle = `N`
 - 25 cells, all `N` pieces must be placed -> `25! / (25 - N)!`

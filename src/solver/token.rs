@@ -26,7 +26,7 @@ impl Token {
         } else {
             orientation
         };
-        let lit = type_ == TokenType::CellBlocker;
+        let lit = (type_ == TokenType::CellBlocker) || (type_ == TokenType::Laser);
         Self {
             type_,
             orientation,
@@ -37,7 +37,7 @@ impl Token {
     }
 
     pub fn reset(&mut self) {
-        self.lit = false;
+        self.lit = (self.type_ == TokenType::CellBlocker) || (self.type_ == TokenType::Laser);
         if self.target_lit.is_some() {
             self.target_lit = Some(false);
         }

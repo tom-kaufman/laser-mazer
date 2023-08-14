@@ -318,4 +318,11 @@ impl MyApp {
             }
         }
     }
+
+    pub fn change_grid(&mut self, new_grid: [Option<Token>; 25]) {
+        // accepts the coordinates used by the Solver, not visual coords
+        for i in 0..25 {
+            self.tokens_grid[i] = new_grid[Self::translate_model_index(i)].clone();
+        }
+    }
 }

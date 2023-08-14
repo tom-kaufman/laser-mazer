@@ -161,7 +161,9 @@ impl Checker {
     }
 
     pub fn solved(&self) -> bool {
-        self.grid.targets == self.count_lit_targets() && self.all_required_targets_lit()
+        self.grid.targets == self.count_lit_targets()
+            && self.all_required_targets_lit()
+            && self.all_tokens_lit()
     }
 
     fn count_lit_targets(&self) -> u8 {
@@ -198,6 +200,10 @@ impl Checker {
                 }
             })
             .all(|b| b)
+    }
+
+    fn all_tokens_lit(&self) -> bool {
+        self.grid.cells.iter().flatten().all(|token| token.lit)
     }
 
     // Find the laser piece and set initialize the active laser there
