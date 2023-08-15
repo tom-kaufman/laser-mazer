@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Orientation {
     North,
     East,

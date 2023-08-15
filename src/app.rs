@@ -6,6 +6,9 @@ use crate::solver::LaserMazeSolver;
 use eframe::egui;
 use eframe::App;
 
+use eframe::egui::Ui;
+use serde::{Deserialize, Serialize};
+
 mod widgets;
 use eframe::egui::Key;
 use eframe::egui::Slider;
@@ -14,25 +17,21 @@ use widgets::cell::collections::Grid;
 use widgets::cell::collections::ToBeAdded;
 
 mod resources;
+mod challenges;
+mod menus;
 
-pub struct MyApp {
-    cell_size: f32,
+use menus::LoadIncludedChallengesMenu;
 
-    tokens_grid: [Option<Token>; 25],
-    tokens_to_be_added: [Option<Token>; 6],
-    tokens_bank: [Option<Token>; 11],
-    targets: u8,
-
-    images: resources::ImageBank,
-
-    token_move_indices: Option<(usize, usize)>,
-
-    message_text: String,
+#[derive(Serialize, Deserialize)]
+pub struct Tokens {
+    grid: [Option<Token>; 25],
+    to_be_added: [Option<Token>; 6],
+    bank: [Option<Token>; 11],
 }
 
-impl Default for MyApp {
+impl Default for Tokens {
     fn default() -> Self {
-        let tokens_bank = [
+        let bank = [
             Some(Token::new(TokenType::Laser, None, false)),
             Some(Token::new(TokenType::TargetMirror, None, false)),
             Some(Token::new(TokenType::TargetMirror, None, false)),
@@ -47,14 +46,37 @@ impl Default for MyApp {
         ];
 
         Self {
+            grid: Default::default(),
+            to_be_added: Default::default(),
+            bank,
+        }
+    }
+}
+
+pub struct MyApp {
+    cell_size: f32,
+    targets: u8,
+    tokens: Tokens,
+
+    images: resources::ImageBank,
+
+    token_move_indices: Option<(usize, usize)>,
+
+    message_text: String,
+
+    load_included_challenges_menu: LoadIncludedChallengesMenu,
+}
+
+impl Default for MyApp {
+    fn default() -> Self {
+        Self {
             cell_size: 100.,
-            tokens_grid: Default::default(),
-            tokens_bank,
-            tokens_to_be_added: Default::default(),
             targets: 1,
-            images: resources::ImageBank::default(),
+            tokens: Default::default(),
+            images: Default::default(),
             token_move_indices: Default::default(),
             message_text: Default::default(),
+            load_included_challenges_menu: Default::default(),
         }
     }
 }
@@ -66,29 +88,42 @@ impl App for MyApp {
         let mut bank_responses = None;
         let mut grid_responses = None;
         let mut to_be_added_responses = None;
+        egui::TopBottomPanel::top("top").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                ui.menu_button("Challenges", |ui| {
+                    if ui.button("Included").clicked() {
+                        self.load_included_challenges_menu.open = true;
+                        ui.close_menu();
+                    }
+                });
+            });
+        });
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     ui.heading("Bank");
                     bank_responses =
-                        Some(Bank::new(self.cell_size).show(ui, &self.images, &self.tokens_bank));
+                        Some(Bank::new(self.cell_size).show(ui, &self.images, &self.tokens.bank));
                 });
                 ui.vertical(|ui| {
                     ui.heading("To Be Added");
                     to_be_added_responses = Some(ToBeAdded::new(self.cell_size * 0.82).show(
                         ui,
                         &self.images,
-                        &self.tokens_to_be_added,
+                        &self.tokens.to_be_added,
                     ));
                     ui.heading("Grid");
                     grid_responses =
-                        Some(Grid::new(self.cell_size).show(ui, &self.images, &self.tokens_grid));
+                        Some(Grid::new(self.cell_size).show(ui, &self.images, &self.tokens.grid));
                 });
             });
             ui.horizontal(|ui| {
                 ui.label("Number of Targets:");
                 ui.add(Slider::new(&mut self.targets, 1..=3));
             });
+            if ui.button("Print to console").clicked() {
+                self.print_tokens_to_console();
+            }
             if ui.button("Check").clicked() {
                 if self.check() {
                     self.message_text = "This laser maze is solved!".into()
@@ -118,6 +153,7 @@ impl App for MyApp {
             bank_responses.as_ref().unwrap(),
             to_be_added_responses.as_ref().unwrap(),
         );
+        self.load_included_challenges_menu.show(ctx, &mut self.tokens);
     }
 }
 
@@ -173,27 +209,27 @@ impl MyApp {
                 // clone the token and set its original position to None
                 let moving_token = match dragged_index {
                     0..=24 => {
-                        let moving_token = self.tokens_grid[dragged_index]
+                        let moving_token = self.tokens.grid[dragged_index]
                             .as_ref()
                             .expect("We can only drag cells which have a token")
                             .clone();
-                        self.tokens_grid[dragged_index] = None;
+                        self.tokens.grid[dragged_index] = None;
                         moving_token
                     }
                     25..=35 => {
-                        let moving_token = self.tokens_bank[dragged_index - 25]
+                        let moving_token = self.tokens.bank[dragged_index - 25]
                             .as_ref()
                             .expect("We can only drag cells which have a token")
                             .clone();
-                        self.tokens_bank[dragged_index - 25] = None;
+                        self.tokens.bank[dragged_index - 25] = None;
                         moving_token
                     }
                     36..=41 => {
-                        let moving_token = self.tokens_to_be_added[dragged_index - 36]
+                        let moving_token = self.tokens.to_be_added[dragged_index - 36]
                             .as_ref()
                             .expect("We can only drag cells which have a token")
                             .clone();
-                        self.tokens_to_be_added[dragged_index - 36] = None;
+                        self.tokens.to_be_added[dragged_index - 36] = None;
                         moving_token
                     }
                     _ => {
@@ -203,13 +239,13 @@ impl MyApp {
                 // move the cloned token into its new place
                 match hovered_index {
                     0..=24 => {
-                        self.tokens_grid[hovered_index] = Some(moving_token);
+                        self.tokens.grid[hovered_index] = Some(moving_token);
                     }
                     25..=35 => {
-                        self.tokens_bank[hovered_index - 25] = Some(moving_token);
+                        self.tokens.bank[hovered_index - 25] = Some(moving_token);
                     }
                     36..=41 => {
-                        self.tokens_to_be_added[hovered_index - 36] = Some(moving_token);
+                        self.tokens.to_be_added[hovered_index - 36] = Some(moving_token);
                     }
                     _ => {
                         panic!("impossible case because of fixed array lengths")
@@ -237,9 +273,9 @@ impl MyApp {
             .find(|(_idx, response)| response.hovered())
         {
             if let Some(token) = match hovered_index {
-                0..=24 => self.tokens_grid[hovered_index].as_mut(),
-                25..=35 => self.tokens_bank[hovered_index - 25].as_mut(),
-                36..=41 => self.tokens_to_be_added[hovered_index - 36].as_mut(),
+                0..=24 => self.tokens.grid[hovered_index].as_mut(),
+                25..=35 => self.tokens.bank[hovered_index - 25].as_mut(),
+                36..=41 => self.tokens.to_be_added[hovered_index - 36].as_mut(),
                 _ => {
                     panic!("impossible case because of fixed array lengths")
                 }
@@ -277,10 +313,10 @@ impl MyApp {
     #[allow(clippy::needless_range_loop)]
     fn solve(&mut self) -> bool {
         if let Some(solved_grid) = self.run_solver() {
-            self.tokens_to_be_added = Default::default();
+            self.tokens.to_be_added = Default::default();
             for i in 0..25 {
                 let transformed_index = Self::translate_model_index(i);
-                self.tokens_grid[transformed_index] = solved_grid[i].clone()
+                self.tokens.grid[transformed_index] = solved_grid[i].clone()
             }
             true
         } else {
@@ -292,11 +328,11 @@ impl MyApp {
         let mut grid: [Option<Token>; 25] = Default::default();
         for i in 0..25 {
             let transformed_index = Self::translate_model_index(i);
-            grid[transformed_index] = self.tokens_grid[i].clone();
+            grid[transformed_index] = self.tokens.grid[i].clone();
         }
 
         let mut to_be_added = vec![];
-        for token in self.tokens_to_be_added.iter().flatten() {
+        for token in self.tokens.to_be_added.iter().flatten() {
             to_be_added.push(token.clone());
         }
 
@@ -322,7 +358,12 @@ impl MyApp {
     pub fn change_grid(&mut self, new_grid: [Option<Token>; 25]) {
         // accepts the coordinates used by the Solver, not visual coords
         for i in 0..25 {
-            self.tokens_grid[i] = new_grid[Self::translate_model_index(i)].clone();
+            self.tokens.grid[i] = new_grid[Self::translate_model_index(i)].clone();
         }
+    }
+
+    pub fn print_tokens_to_console(&self) {
+        let text = serde_json::to_string(&self.tokens).unwrap();
+        println!("\n{text}\n");
     }
 }

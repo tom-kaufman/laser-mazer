@@ -1,6 +1,7 @@
 use crate::solver::orientation::Orientation;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Token {
     type_: TokenType,
     pub orientation: Option<Orientation>,
@@ -160,7 +161,7 @@ impl Token {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Eq, Hash, Debug, PartialOrd, Ord)]
+#[derive(PartialEq, Copy, Clone, Eq, Hash, Debug, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum TokenType {
     Laser,
     TargetMirror,
