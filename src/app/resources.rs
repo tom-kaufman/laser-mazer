@@ -45,7 +45,7 @@ impl ImageBank {
     fn cell_empty() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "cell_empty.png",
-            include_bytes!(r#"..\..\assets\cell_empty.png"#),
+            include_bytes!(r#"../../assets/cell_empty.png"#),
         )
         .expect("failed to load cell_empty.png")
     }
@@ -53,7 +53,7 @@ impl ImageBank {
     fn cell_empty_hovered() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "cell_empty_hovered.png",
-            include_bytes!(r#"..\..\assets\cell_empty_hovered.png"#),
+            include_bytes!(r#"../../assets/cell_empty_hovered.png"#),
         )
         .expect("failed to load cell_empty_hovered.png")
     }
@@ -61,7 +61,7 @@ impl ImageBank {
     fn token_laser() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_laser.png",
-            include_bytes!(r#"..\..\assets\token_laser.png"#),
+            include_bytes!(r#"../../assets/token_laser.png"#),
         )
         .expect("failed to load token_laser.png")
     }
@@ -69,7 +69,7 @@ impl ImageBank {
     fn token_laser_unoriented() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_laser_unoriented.png",
-            include_bytes!(r#"..\..\assets\token_laser_unoriented.png"#),
+            include_bytes!(r#"../../assets/token_laser_unoriented.png"#),
         )
         .expect("failed to load token_laser_unoriented.png")
     }
@@ -77,77 +77,77 @@ impl ImageBank {
     fn token_target_mirror() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_target_mirror.png",
-            include_bytes!(r#"..\..\assets\token_target_mirror.png"#),
+            include_bytes!(r#"../../assets/token_target_mirror.png"#),
         )
         .expect("failed to load token_target_mirror.png")
     }
     fn token_target_mirror_unoriented() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_target_mirror_unoriented.png",
-            include_bytes!(r#"..\..\assets\token_target_mirror_unoriented.png"#),
+            include_bytes!(r#"../../assets/token_target_mirror_unoriented.png"#),
         )
         .expect("failed to load token_target_mirror_unoriented.png")
     }
     fn token_target_mirror_must_light() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_target_mirror_must_light.png",
-            include_bytes!(r#"..\..\assets\token_target_mirror_must_light.png"#),
+            include_bytes!(r#"../../assets/token_target_mirror_must_light.png"#),
         )
         .expect("failed to load token_target_mirror_must_light.png")
     }
     fn token_target_mirror_must_light_unoriented() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_target_mirror_must_light_unoriented.png",
-            include_bytes!(r#"..\..\assets\token_target_mirror_must_light_unoriented.png"#),
+            include_bytes!(r#"../../assets/token_target_mirror_must_light_unoriented.png"#),
         )
         .expect("failed to load token_target_mirror_must_light_unoriented.png")
     }
     fn token_beam_splitter() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_beam_splitter.png",
-            include_bytes!(r#"..\..\assets\token_beam_splitter.png"#),
+            include_bytes!(r#"../../assets/token_beam_splitter.png"#),
         )
         .expect("failed to load token_beam_splitter.png")
     }
     fn token_beam_splitter_unoriented() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_beam_splitter_unoriented.png",
-            include_bytes!(r#"..\..\assets\token_beam_splitter_unoriented.png"#),
+            include_bytes!(r#"../../assets/token_beam_splitter_unoriented.png"#),
         )
         .expect("failed to load token_beam_splitter_unoriented.png")
     }
     fn token_double_mirror() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_double_mirror.png",
-            include_bytes!(r#"..\..\assets\token_double_mirror.png"#),
+            include_bytes!(r#"../../assets/token_double_mirror.png"#),
         )
         .expect("failed to load token_double_mirror.png")
     }
     fn token_double_mirror_unoriented() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_double_mirror_unoriented.png",
-            include_bytes!(r#"..\..\assets\token_double_mirror_unoriented.png"#),
+            include_bytes!(r#"../../assets/token_double_mirror_unoriented.png"#),
         )
         .expect("failed to load token_double_mirror_unoriented.png")
     }
     fn token_checkpoint() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_checkpoint.png",
-            include_bytes!(r#"..\..\assets\token_checkpoint.png"#),
+            include_bytes!(r#"../../assets/token_checkpoint.png"#),
         )
         .expect("failed to load token_checkpoint.png")
     }
     fn token_checkpoint_unoriented() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_checkpoint_unoriented.png",
-            include_bytes!(r#"..\..\assets\token_checkpoint_unoriented.png"#),
+            include_bytes!(r#"../../assets/token_checkpoint_unoriented.png"#),
         )
         .expect("failed to load token_checkpoint_unoriented.png")
     }
     fn token_cell_blocker() -> RetainedImage {
         RetainedImage::from_image_bytes(
             "token_cell_blocker.png",
-            include_bytes!(r#"..\..\assets\token_cell_blocker.png"#),
+            include_bytes!(r#"../../assets/token_cell_blocker.png"#),
         )
         .expect("failed to load token_cell_blocker.png")
     }
