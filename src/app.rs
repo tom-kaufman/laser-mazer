@@ -16,9 +16,9 @@ use widgets::cell::collections::Bank;
 use widgets::cell::collections::Grid;
 use widgets::cell::collections::ToBeAdded;
 
-mod resources;
 mod challenges;
 mod menus;
+mod resources;
 
 use menus::LoadIncludedChallengesMenu;
 
@@ -104,6 +104,14 @@ impl App for MyApp {
                     ui.heading("Bank");
                     bank_responses =
                         Some(Bank::new(self.cell_size).show(ui, &self.images, &self.tokens.bank));
+                    ui.heading("Controls");
+                    ui.label("Mouse drag/drop: Move token");
+                    ui.label("W/A/S/D: Reorient hovered token");
+                    ui.label("R: Set hovered token's orientation to unknown");
+                    ui.label("M: Toggle whether hovered token must be lit (purple tokens only)");
+                    ui.heading("Links");
+                    ui.hyperlink_to("Game Instructions", "https://www.thinkfun.com/wp-content/uploads/2013/09/Laser-1014-Instructions.pdf");
+                    ui.hyperlink_to("Bonus Challenges", "https://www.thinkfun.com/bonus/laser-maze/");
                 });
                 ui.vertical(|ui| {
                     ui.heading("To Be Added");
@@ -153,7 +161,8 @@ impl App for MyApp {
             bank_responses.as_ref().unwrap(),
             to_be_added_responses.as_ref().unwrap(),
         );
-        self.load_included_challenges_menu.show(ctx, &mut self.tokens);
+        self.load_included_challenges_menu
+            .show(ctx, &mut self.tokens);
     }
 }
 
