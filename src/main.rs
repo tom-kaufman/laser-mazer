@@ -26,7 +26,7 @@ fn main() {
     eframe::run_native(
         "Laser Mazer",
         eframe::NativeOptions {
-            initial_window_size: Some(eframe::egui::vec2(1600., 900.)),
+            initial_window_size: Some(eframe::egui::vec2(1100., 900.)),
             ..Default::default()
         },
         Box::new(|_cc| Box::<app::MyApp>::default()),

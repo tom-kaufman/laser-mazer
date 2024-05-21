@@ -144,8 +144,7 @@ impl LaserMazeSolver {
 
         self.initialize();
 
-        while !self.stack.is_empty() {
-            let mut node = self.stack.pop().expect("loop criteria is non-empty vec");
+        while let Some(mut node) = self.stack.pop() {
             match node.generate_branches() {
                 Ok(cells) => return Some(cells),
                 Err(new_nodes) => self.stack.extend(new_nodes),

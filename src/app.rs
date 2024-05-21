@@ -6,7 +6,6 @@ use crate::solver::LaserMazeSolver;
 use eframe::egui;
 use eframe::App;
 
-use eframe::egui::Ui;
 use serde::{Deserialize, Serialize};
 
 mod widgets;
@@ -324,8 +323,9 @@ impl MyApp {
         if let Some(solved_grid) = self.run_solver() {
             self.tokens.to_be_added = Default::default();
             for i in 0..25 {
+                // Allow clippy lint `needless_range_loop` because of different index systems
                 let transformed_index = Self::translate_model_index(i);
-                self.tokens.grid[transformed_index] = solved_grid[i].clone()
+                self.tokens.grid[transformed_index].clone_from(&solved_grid[i])
             }
             true
         } else {
@@ -337,7 +337,7 @@ impl MyApp {
         let mut grid: [Option<Token>; 25] = Default::default();
         for i in 0..25 {
             let transformed_index = Self::translate_model_index(i);
-            grid[transformed_index] = self.tokens.grid[i].clone();
+            grid[transformed_index].clone_from(&self.tokens.grid[i]);
         }
 
         let mut to_be_added = vec![];
@@ -364,10 +364,11 @@ impl MyApp {
         }
     }
 
+    #[allow(dead_code)]
     pub fn change_grid(&mut self, new_grid: [Option<Token>; 25]) {
         // accepts the coordinates used by the Solver, not visual coords
         for i in 0..25 {
-            self.tokens.grid[i] = new_grid[Self::translate_model_index(i)].clone();
+            self.tokens.grid[i].clone_from(&new_grid[Self::translate_model_index(i)]);
         }
     }
 
