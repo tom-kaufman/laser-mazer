@@ -1,5 +1,5 @@
 use crate::solver::solver_node::active_laser::ActiveLaser;
-use crate::solver::solver_node::{SolverNode, SPIRAL_ORDER};
+use crate::solver::solver_node::{SolverNode, SPIRAL_ORDER_REVERSE};
 use crate::solver::token::{Token, TokenType};
 
 #[derive(Clone, Default, Debug)]
@@ -112,7 +112,7 @@ impl Checker {
             // if the laser only hit oriented tokens, try placing the next token in any of the cells the laser visited but are not occupied by a token
             let empty_cells_with_active_laser = self.empty_cells_with_active_laser();
             let mut result = vec![];
-            for i in SPIRAL_ORDER.iter() {
+            for i in SPIRAL_ORDER_REVERSE.iter() {
                 if !empty_cells_with_active_laser.contains(i) {
                     continue;
                 }

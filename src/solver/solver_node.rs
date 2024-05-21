@@ -47,7 +47,7 @@ impl SolverNode {
                 .retain(|token| token.type_() != &TokenType::Laser);
             let laser = Token::new(TokenType::Laser, None, false);
             let mut result = vec![];
-            for i in SPIRAL_ORDER.iter() {
+            for i in SPIRAL_ORDER_REVERSE.iter() {
                 // find all unoccupied cells
                 if self.cells[*i].is_none() {
                     // make a copy of this node, place the laser token in this unoccupied slot, and make new nodes for all the orientations of the laser
@@ -474,6 +474,12 @@ impl SolverNode {
 lazy_static! {
     pub static ref SPIRAL_ORDER: [usize; 25] = [
         0, 1, 2, 3, 4, 9, 14, 19, 24, 23, 22, 21, 20, 15, 10, 5, 6, 7, 8, 13, 18, 17, 16, 11, 12,
+    ];
+}
+
+lazy_static! {
+    pub static ref SPIRAL_ORDER_REVERSE: [usize; 25] = [
+        12, 11, 16, 17, 18, 13, 8, 7, 6, 5, 10, 15, 20, 21, 22, 23, 24, 19, 14, 9, 4, 3, 2, 1, 0
     ];
 }
 
