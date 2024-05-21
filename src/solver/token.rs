@@ -1,4 +1,5 @@
 use crate::solver::orientation::Orientation;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -182,4 +183,15 @@ impl TokenType {
             _ => vec![0, 1, 2, 3],
         }
     }
+}
+
+lazy_static! {
+    pub static ref TOKEN_TYPES: [TokenType; 6] = [
+        TokenType::Laser,
+        TokenType::TargetMirror,
+        TokenType::BeamSplitter,
+        TokenType::DoubleMirror,
+        TokenType::Checkpoint,
+        TokenType::CellBlocker,
+    ];
 }

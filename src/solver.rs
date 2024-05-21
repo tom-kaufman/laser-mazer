@@ -6,6 +6,7 @@ pub mod token;
 use token::{Token, TokenType};
 
 mod solver_node;
+use crate::solver::token::TOKEN_TYPES;
 use solver_node::SolverNode;
 
 mod checker;
@@ -42,16 +43,19 @@ impl LaserMazeSolver {
     }
 
     /// validate that a good Challenge is provided
-    fn validate(&self) -> bool {
+    fn validate(&self) -> Result<(), String> {
         // 1 - 3 targets
         if (self.targets == 0) || (self.targets > 3) {
-            println!("Invalid number of targets!");
-            return false;
+            return Err(String::from("Invalid number of targets!"));
         }
 
         // make sure count of each type of Token is valid
         // count piece types on the grid
         let mut token_counts: HashMap<TokenType, u8> = HashMap::new();
+        // Initialize each token count with 0
+        for token in TOKEN_TYPES.iter() {
+            token_counts.entry(*token).or_insert(0);
+        }
         for token in self.initial_grid_config.iter().flatten() {
             token_counts
                 .entry(*token.type_())
@@ -76,8 +80,10 @@ impl LaserMazeSolver {
                 TokenType::CellBlocker => (0, 1),
             };
             if (count < min_count) || (count > max_count) {
-                println!("Invalid piece count for piece type {:?}!", token_type);
-                return false;
+                return Err(format!(
+                    "Invalid piece count for piece type {:?}!",
+                    token_type
+                ));
             }
         }
 
@@ -90,8 +96,7 @@ impl LaserMazeSolver {
             .map(|token| token.must_light() as u8)
             .sum();
         if self.targets < must_light_count {
-            println!("Invalid number of pieces which must be lit!");
-            return false;
+            return Err(String::from("Invalid number of pieces which must be lit!"));
         }
 
         // no cell blocker in tokens to be added
@@ -100,11 +105,10 @@ impl LaserMazeSolver {
             .iter()
             .any(|token| token.type_() == &TokenType::CellBlocker)
         {
-            println!("Cell Blocker included in tokens_to_be_added!");
-            return false;
+            return Err(String::from("Cell Blocker included in tokens_to_be_added!"));
         }
 
-        true
+        Ok(())
     }
 
     // initialize some things (for now, just sort the pieces to be added heuristically)
@@ -137,21 +141,21 @@ impl LaserMazeSolver {
     }
 
     #[allow(dead_code)]
-    pub fn solve(&mut self) -> Option<[Option<Token>; 25]> {
-        if !self.validate() {
-            panic!("invalid challenge");
-        }
+    pub fn solve(&mut self) -> Result<Option<[Option<Token>; 25]>, String> {
+        // Returns Ok(Some(_)) if solution found, Ok(None) if no solution, Err(s) if
+        // invalid puzzle provided; s describes why the puzzle is invalid
+        self.validate()?;
 
         self.initialize();
 
         while let Some(mut node) = self.stack.pop() {
             match node.generate_branches() {
-                Ok(cells) => return Some(cells),
+                Ok(cells) => return Ok(Some(cells)),
                 Err(new_nodes) => self.stack.extend(new_nodes),
             }
         }
 
-        None
+        Ok(None)
     }
 }
 
@@ -609,5 +613,25 @@ mod test {
 
         println!("{:?}", result.unwrap());
         println!("Processed in {:?}", t1 - t0);
+    }
+
+    #[test]
+    fn wrong_number_targets() {
+        let mut solver = LaserMazeSolver::new(Default::default(), vec![], 4);
+        let result = solver.solve();
+        match result {
+            Ok(_) => panic!("Test failed, should error"),
+            Err(s) => assert_eq!(s, String::from("Invalid number of targets!")),
+        }
+    }
+
+    #[test]
+    fn no_laser() {
+        let mut solver = LaserMazeSolver::new(Default::default(), vec![], 1);
+        let result = solver.solve();
+        match result {
+            Ok(_) => panic!("Test failed, should error"),
+            Err(s) => assert_eq!(s, String::from("Invalid piece count for piece type Laser!")),
+        }
     }
 }

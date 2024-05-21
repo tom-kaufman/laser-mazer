@@ -139,10 +139,10 @@ impl App for MyApp {
                 }
             }
             if ui.button("Solve").clicked() {
-                if self.solve() {
-                    self.message_text = "Here's the solution!".into()
-                } else {
-                    self.message_text = "This laser maze is not solvable!".into()
+                match self.solve() {
+                    Ok(true) => {self.message_text = "Here's the solution!".into()},
+                    Ok(false) => {self.message_text = "This laser maze is not solvable!".into()}
+                    Err(s) => {self.message_text = format!("Error while running solver: {}", s)}
                 }
             }
             ui.label(format!("Message: {}", self.message_text));
@@ -314,22 +314,22 @@ impl MyApp {
             .solved()
     }
 
-    fn run_solver(&self) -> Option<[Option<Token>; 25]> {
+    fn run_solver(&self) -> Result<Option<[Option<Token>; 25]>, String> {
         self.generate_solver().solve()
     }
 
     #[allow(clippy::needless_range_loop)]
-    fn solve(&mut self) -> bool {
-        if let Some(solved_grid) = self.run_solver() {
+    fn solve(&mut self) -> Result<bool, String> {
+        if let Some(solved_grid) = self.run_solver()? {
             self.tokens.to_be_added = Default::default();
             for i in 0..25 {
                 // Allow clippy lint `needless_range_loop` because of different index systems
                 let transformed_index = Self::translate_model_index(i);
                 self.tokens.grid[transformed_index].clone_from(&solved_grid[i])
             }
-            true
+            Ok(true)
         } else {
-            false
+            Ok(false)
         }
     }
 
