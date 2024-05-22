@@ -1,6 +1,6 @@
 # laser-mazer
 
-A Solver + GUI for the puzzle board game [Laser Maze](https://www.thinkfun.com/wp-content/uploads/2013/09/Laser-1014-Instructions.pdf), implemented in Rust.
+A Solver + GUI for the pguzzle board game [Laser Maze](https://www.thinkfun.com/wp-content/uploads/2013/09/Laser-1014-Instructions.pdf), implemented in Rust.
 
 ## Running
 - Use [`rustup`](https://rustup.rs/) to install Rust on your machine
@@ -42,7 +42,7 @@ The first few calls to `SolverNode::generate_branches` have two special behavior
 1. If the `Laser` token is yet to be placed, we first generate child branches for each placement and orientation of the laser. This means that puzzles where the position of the laser is not set already take much longer to solve!
 2. Next, we need to create child branches for each unique order of token placement. The reason will be more clear after we finally talk about how we use the laser's path to heuristically rule out branches, but for now, trust me that it's necessary.
 
-To illustrate why we *must* use a depth-first search (as opposed to a breadth-first search), consider the extreme case where only 1 of the 25 cells initially have a token, and we need to place 6 tokens (including 1 laser, 1 checkpoint, 1 double mirror, 1 beam splitter, and 2 target mirrors). The laser may be placed in any of the 24 open cells, with 4 possible orientations in each cell. Then, for each of the laser placements, we have `(1 + 1 + 1 + 2)!/(1! * 1! * 1! * 2!) = 60` unique shufflings of the 5 remaining tokens. So, in this extreme case, we would have `(4*60)^24 ~= 1.3e+57` nodes before even placing any non-laser tokens!
+Let's consider the limiting case where only 1 of the 25 cells initially have a token, and we need to place 6 tokens (including 1 laser, 1 checkpoint, 1 double mirror, 1 beam splitter, and 2 target mirrors). The laser may be placed in any of the 24 open cells, with 4 possible orientations in each cell. Then, for each of the laser placements, we have `(1 + 1 + 1 + 2)!/(1! * 1! * 1! * 2!) = 60` unique shufflings of the 5 remaining tokens. So, we could have up to `4*60*24 = 5760` nodes before even placing any non-laser tokens.
 
 Finally, we need to generate child nodes by either orienting the unoriented tokens, or by placing unplaced tokens. We run `SolverNode::check`, to iteratively march the laser forward, initiating it from the laser token, and stopping either when we hit an unoriented token, or once all lasers are inactive. Lasers may be inactive if they go off the board, hit a piece which doesn't transmit the laser, or overlaps a path already tread by a laser (loops are possible because of the beam splitter pieces). 
 
