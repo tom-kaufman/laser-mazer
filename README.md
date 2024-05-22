@@ -9,7 +9,7 @@ A Solver + GUI for the pguzzle board game [Laser Maze](https://www.thinkfun.com/
 - `cargo run --release`
 
 ## Demo
-[simplescreenrecorder.webm](https://github.com/tom-kaufman/laser-mazer/assets/102370231/ff689c76-3815-4c21-8669-2a459107b09c)
+[Bonus Challenge 26 Demo](https://github.com/tom-kaufman/laser-mazer/assets/102370231/ff689c76-3815-4c21-8669-2a459107b09c)
 
 ## About the solver
 The solver uses an iterative depth-first search (DFS) algorithm to solve the puzzle.
