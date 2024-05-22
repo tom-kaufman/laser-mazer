@@ -9,7 +9,7 @@ A Solver + GUI for the puzzle board game [Laser Maze](https://www.thinkfun.com/w
 - `cargo run --release`
 
 ## Demo
-https://github.com/tom-kaufman/laser-mazer/media/demo-bonus-2.mp4
+https://github.com/tom-kaufman/laser-mazer/tree/main/media/demo-bonus-2.mp4
 
 ## About the solver
 The solver uses an iterative depth-first search (DFS) algorithm to solve the puzzle.
