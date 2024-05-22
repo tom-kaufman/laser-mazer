@@ -8,6 +8,12 @@ A Solver + GUI for the puzzle board game [Laser Maze](https://www.thinkfun.com/w
 - `cd` into the cloned repo
 - `cargo run --release`
 
+## Demo
+<video width="1100" height="900" controls>
+  <source src="media/demo-bonus-2.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 ## About the solver
 The solver uses an iterative depth-first search (DFS) algorithm to solve the puzzle.
 
