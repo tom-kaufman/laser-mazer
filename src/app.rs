@@ -26,6 +26,7 @@ pub struct Tokens {
     grid: [Option<Token>; 25],
     to_be_added: [Option<Token>; 6],
     bank: [Option<Token>; 11],
+    targets: u8,
 }
 
 impl Default for Tokens {
@@ -48,13 +49,13 @@ impl Default for Tokens {
             grid: Default::default(),
             to_be_added: Default::default(),
             bank,
+            targets: 1,
         }
     }
 }
 
 pub struct MyApp {
     cell_size: f32,
-    targets: u8,
     tokens: Tokens,
 
     images: resources::ImageBank,
@@ -70,7 +71,6 @@ impl Default for MyApp {
     fn default() -> Self {
         Self {
             cell_size: 100.,
-            targets: 1,
             tokens: Default::default(),
             images: Default::default(),
             token_move_indices: Default::default(),
@@ -90,10 +90,12 @@ impl App for MyApp {
         egui::TopBottomPanel::top("top").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("Challenges", |ui| {
-                    if ui.button("Included").clicked() {
-                        self.load_included_challenges_menu.open = true;
-                        ui.close_menu();
-                    }
+                    // if ui.button("Included").clicked() {
+                    //     self.load_included_challenges_menu.open = true;
+                    //     ui.close_menu();
+                    // }
+                    self.load_included_challenges_menu.open = true;
+                    ui.close_menu();
                 });
             });
         });
@@ -126,7 +128,7 @@ impl App for MyApp {
             });
             ui.horizontal(|ui| {
                 ui.label("Number of Targets:");
-                ui.add(Slider::new(&mut self.targets, 1..=3));
+                ui.add(Slider::new(&mut self.tokens.targets, 1..=3));
             });
             if ui.button("Print to console").clicked() {
                 self.print_tokens_to_console();
@@ -345,7 +347,7 @@ impl MyApp {
             to_be_added.push(token.clone());
         }
 
-        LaserMazeSolver::new(grid, to_be_added, self.targets) // TODO add input for # target
+        LaserMazeSolver::new(grid, to_be_added, self.tokens.targets)
     }
 
     // because of how egui adds items, the gui has cell 0 at top left, while the model
