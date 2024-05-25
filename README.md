@@ -73,3 +73,10 @@ The [game instructions](https://www.thinkfun.com/wp-content/uploads/2013/09/Lase
 - 25 cells, all `N` pieces must be placed -> `25! / (25 - N)!`
 - each piece may have 4 rotations, for N pieces, there are `4^N` rotation configurations
 - so, `summation on [2, 12] { 4^N * 25! / (25 - N)! }` yields 4.255014734672012e+22
+
+
+## TODO
+- Separate the solver and GUI to their own crates
+- Try using `deku` to compact the `SolverNode` to reduce copy time
+- Add more included challenges
+- Add visualization for the laser to the GUI
