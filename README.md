@@ -80,3 +80,4 @@ The [game instructions](https://www.thinkfun.com/wp-content/uploads/2013/09/Lase
 - Try using `deku` to compact the `SolverNode` to reduce copy time
 - Add more included challenges
 - Add visualization for the laser to the GUI
+- Try again to implement a multithreaded approach that doesn't add more overhead time than it saves
