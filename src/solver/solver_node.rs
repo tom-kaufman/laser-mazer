@@ -2,13 +2,21 @@ use crate::solver::checker::Checker;
 use crate::solver::orientation::Orientation;
 use crate::solver::token::{Token, TokenType};
 pub mod active_laser;
+use deku::prelude::*;
 use lazy_static::lazy_static;
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, DekuRead, DekuWrite, PartialEq)]
 pub struct SolverNode {
     pub cells: [Option<Token>; 25],
+    #[deku(update = "self.tokens_to_be_added.len()")]
+    tokens_to_be_added_count: u8,
+    #[deku(count = "tokens_to_be_added_count")]
     pub tokens_to_be_added: Vec<Token>,
+    #[deku(update = "self.tokens_to_be_added_shuffled.len()")]
+    tokens_to_be_added_shuffled_count: u8,
+    #[deku(count = "tokens_to_be_added_shuffled_count")]
     pub tokens_to_be_added_shuffled: Vec<Token>,
+    #[deku(bits = 11)]
     pub targets: u8,
 }
 
@@ -28,6 +36,42 @@ impl SolverNode {
         // now, make a checker. it will march the laser forward.
         // it will return Ok() if we hit the solution, or Err(new_nodes) otherwise
         self.clone_to_checker().check().generate_branches()
+    }
+
+    pub fn generate_branches_deku(
+        mut node_deku: Vec<u8>,
+    ) -> Result<[Option<Token>; 25], Vec<Vec<u8>>> {
+        let (_, mut node) = Self::from_bytes((node_deku.as_ref(), 0)).expect("TODO");
+
+        // place the laser if it's not been added to the grid and rotated
+        if !node.laser_placed_and_rotated() {
+            let nodes = node.generate_laser_placement_branches();
+            let nodes_deku = Self::vec_into_deku_vec(nodes);
+            return Err(nodes_deku);
+        }
+
+        // next, shuffle the remaining pieces to be added
+        if !node.tokens_to_be_added.is_empty() {
+            let nodes = node.generate_shuffled_tokens_to_be_added_branches();
+            let nodes_deku = Self::vec_into_deku_vec(nodes);
+            return Err(nodes_deku);
+        }
+
+        // now, make a checker. it will march the laser forward.
+        // it will return Ok() if we hit the solution, or Err(new_nodes) otherwise
+        match node.clone_to_checker().check().generate_branches() {
+            Ok(solution) => Ok(solution),
+            Err(new_nodes) => {
+                let new_nodes_deku = Self::vec_into_deku_vec(new_nodes);
+                Err(new_nodes_deku)
+            }
+        }
+    }
+
+    fn vec_into_deku_vec(v: Vec<Self>) -> Vec<Vec<u8>> {
+        v.into_iter()
+            .map(|node| node.to_bytes().expect("TODO"))
+            .collect()
     }
 
     fn generate_laser_placement_branches(&mut self) -> Vec<Self> {

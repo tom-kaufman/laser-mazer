@@ -1,13 +1,19 @@
 use crate::solver::orientation::Orientation;
+use deku::prelude::*;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, DekuRead, DekuWrite, PartialEq)]
 pub struct Token {
+    // #[deku(bits = 3)]
     type_: TokenType,
+    // #[deku(bits = 3)]
     pub orientation: Option<Orientation>,
+    #[deku(bits = 1)]
     pub lit: bool,
+    #[deku(bits = 2)]
     target_lit: Option<bool>,
+    #[deku(bits = 1)]
     must_light: bool,
 }
 
@@ -162,13 +168,33 @@ impl Token {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Eq, Hash, Debug, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    PartialEq,
+    Copy,
+    Clone,
+    Eq,
+    Hash,
+    Debug,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    DekuRead,
+    DekuWrite,
+)]
+#[deku(id_type = "u8", bits = 3)]
 pub enum TokenType {
+    #[deku(id = 0)]
     Laser,
+    #[deku(id = 1)]
     TargetMirror,
+    #[deku(id = 2)]
     BeamSplitter,
+    #[deku(id = 3)]
     DoubleMirror,
+    #[deku(id = 4)]
     Checkpoint,
+    #[deku(id = 5)]
     CellBlocker,
 }
 

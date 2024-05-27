@@ -3,6 +3,7 @@ use std::collections::HashMap;
 pub mod orientation;
 
 pub mod token;
+use deku::DekuContainerWrite;
 use token::{Token, TokenType};
 
 mod solver_node;
@@ -19,6 +20,7 @@ pub struct LaserMazeSolver {
     initial_grid_config: [Option<Token>; 25],
     tokens_to_be_added: Vec<Token>,
     pub stack: Vec<SolverNode>,
+    pub stack_deku: Vec<Vec<u8>>,
     targets: u8,
 }
 
@@ -34,11 +36,13 @@ impl LaserMazeSolver {
             tokens_to_be_added.clone(),
             targets,
         );
+        let initial_solver_node_deku = vec![]; //initial_solver_node.clone().to_bytes().expect("TODO");
         Self {
             initial_grid_config,
             tokens_to_be_added,
             targets,
             stack: vec![initial_solver_node],
+            stack_deku: vec![initial_solver_node_deku],
         }
     }
 
@@ -157,13 +161,28 @@ impl LaserMazeSolver {
 
         Ok(None)
     }
+
+    pub fn solve_deku(&mut self) -> Result<Option<[Option<Token>; 25]>, String> {
+        self.validate()?;
+
+        self.initialize();
+
+        while let Some(mut node) = self.stack_deku.pop() {
+            match SolverNode::generate_branches_deku(node) {
+                Ok(cells) => return Ok(Some(cells)),
+                Err(new_nodes) => self.stack_deku.extend(new_nodes),
+            }
+        }
+
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
     use crate::solver::orientation::Orientation;
-    use std::time;
+    use std::{any::Any, time};
 
     // /| -- /  -- X
     //       ||
@@ -276,8 +295,7 @@ mod test {
         println!("Processed in {:?}", t1 - t0);
     }
 
-    #[test]
-    fn test_solver_puzzle_25() {
+    fn pz25() -> LaserMazeSolver {
         let mut cells: [Option<Token>; 25] = Default::default();
 
         cells[3] = Some(Token::new(TokenType::TargetMirror, None, true));
@@ -295,6 +313,12 @@ mod test {
         tokens_to_be_added.push(Token::new(TokenType::DoubleMirror, None, false));
 
         let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+        solver
+    }
+
+    #[test]
+    fn test_solver_puzzle_25() {
+        let mut solver = pz25();
 
         let t0 = time::Instant::now();
         let result = solver.solve();
@@ -302,6 +326,99 @@ mod test {
 
         println!("{:?}", result.unwrap());
         println!("Processed in {:?}", t1 - t0);
+    }
+
+    #[test]
+    fn test_deku_back_and_forth() {
+        use deku::DekuContainerRead;
+
+        let node = pz25().stack[0].clone();
+        let deku = node.to_bytes().unwrap();
+        let ((returned_slice, bit_offset), node_out) =
+            SolverNode::from_bytes((deku.as_slice(), 0)).unwrap();
+        println!("bit_offset={bit_offset}");
+        assert_eq!(node, node_out);
+        assert_eq!(deku.as_slice(), returned_slice);
+    }
+
+    #[test]
+    fn test_deku_back_and_forth_token() {
+        use deku::DekuContainerRead;
+
+        let token = Token::new(TokenType::DoubleMirror, Some(Orientation::South), false);
+        let token_deku = token.to_bytes().unwrap();
+        for (idx, byte) in token_deku.iter().enumerate() {
+            println!("byte {idx}: {byte:b}");
+        }
+        let ((returned_slice, bit_offset), out) =
+            Token::from_bytes((token_deku.as_ref(), 8)).unwrap();
+        println!("bit_offset={bit_offset}");
+        assert_eq!(token_deku.as_slice(), returned_slice);
+        assert_eq!(token, out);
+    }
+
+    #[test]
+    fn test_deku_back_and_forth_token_type() {
+        use deku::DekuContainerRead;
+
+        let token = TokenType::DoubleMirror;
+        let token_deku = token.to_bytes().unwrap();
+        let ((returned_slice, bit_offset), out) =
+            TokenType::from_bytes((token_deku.as_slice(), 0)).unwrap();
+        println!("bit_offset={bit_offset}");
+        for b in &token_deku {
+            println!("deku_slice={:b}", b);
+        }
+        assert_eq!(token_deku.as_slice(), returned_slice);
+        assert_eq!(token, out);
+    }
+
+    #[test]
+    fn test_deku_back_and_forth_orientation() {
+        use deku::DekuContainerRead;
+
+        let ori = Orientation::North;
+        let ori_deku = ori.to_bytes().unwrap();
+        let ((returned_slice, bit_offset), out) =
+            Orientation::from_bytes((ori_deku.as_slice(), 0)).unwrap();
+        println!("bit_offset={bit_offset}");
+        for b in &ori_deku {
+            println!("deku_slice={:b}", b);
+        }
+        assert_eq!(ori_deku.as_slice(), returned_slice);
+        assert_eq!(ori, out);
+    }
+
+    #[test]
+    fn test_deku_wtf_orientation() {
+        for orientation in [Orientation::North, Orientation::East, Orientation::South, Orientation::West] {
+            let deku = orientation.to_bytes().unwrap();
+            assert_eq!(deku.len(), 1);
+            let deku = deku[0];
+            println!("orientation {orientation:?} has deku byte repr {deku:8b}");
+        }
+    }
+
+    #[test]
+    fn test_solver_puzzle_25_deku() {
+        let mut s1 = pz25();
+        let mut s2 = pz25();
+
+        let t0 = time::Instant::now();
+        let result_no_deku = s1.solve().unwrap();
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result_no_deku);
+        println!("No deku processed in {:?}", t1 - t0);
+
+        let t0 = time::Instant::now();
+        let result_yes_deku = s2.solve().unwrap();
+        let t1 = time::Instant::now();
+
+        println!("{:?}", result_yes_deku);
+        println!("Yes deku processed in {:?}", t1 - t0);
+
+        assert_eq!(result_no_deku, result_yes_deku);
     }
 
     #[test]

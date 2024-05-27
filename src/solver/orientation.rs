@@ -1,11 +1,17 @@
+use deku::prelude::*;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, DekuRead, DekuWrite)]
+#[deku(id_type = "u8", bits = 2)]
 pub enum Orientation {
+    #[deku(id = 0)]
     North,
+    #[deku(id = 1)]
     East,
+    #[deku(id = 2)]
     South,
+    #[deku(id = 3)]
     West,
 }
 
