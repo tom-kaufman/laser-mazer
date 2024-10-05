@@ -575,6 +575,62 @@ mod test {
         println!("Processed in {:?}", t1 - t0);
     }
 
+    #[test]
+    fn test_solver_puzzle_62() {
+        // Bonus Challenge 2
+        let mut cells: [Option<Token>; 25] = Default::default();
+        cells[0] = Some(Token::new(
+            TokenType::TargetMirror,
+            None,
+            false,
+        ));
+        cells[11] = Some(Token::new(
+            TokenType::Laser,
+            None,
+            false,
+        ));
+        cells[14] = Some(Token::new(
+            TokenType::DoubleMirror,
+            None,
+            false,
+        ));
+        cells[17] = Some(Token::new(
+            TokenType::Checkpoint,
+            Some(Orientation::East),
+            false,
+        ));
+        cells[22] = Some(Token::new(
+            TokenType::TargetMirror,
+            None,
+            false,
+        ));
+
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+
+
+        let t0 = time::Instant::now();
+        let result = solver.solve();
+        let t1 = time::Instant::now();
+
+        let solution = result.unwrap().unwrap();
+        println!("{:?}", solution);
+        println!("Processed in {:?}", t1 - t0);       
+
+        let split_1 = solution[13].clone().unwrap();
+        let split_2 = solution[18].clone().unwrap();
+
+        assert_eq!(split_1.type_(), &TokenType::BeamSplitter);
+        assert_eq!(split_2.type_(), &TokenType::BeamSplitter);
+    }
+
     // bonus 99
     #[test]
     fn test_solver_puzzle_159() {

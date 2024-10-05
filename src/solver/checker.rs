@@ -2,13 +2,32 @@ use crate::solver::solver_node::active_laser::ActiveLaser;
 use crate::solver::solver_node::{SolverNode, SPIRAL_ORDER_REVERSE};
 use crate::solver::token::{Token, TokenType};
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 pub struct Checker {
     grid: SolverNode,
     // there can be 4 active lasers if 2 perpindicular lasers hit the same beam splitter
     active_lasers: [Option<ActiveLaser>; 4],
     laser_visited: [[bool; 4]; 25],
     unoriented_occupied_cells: Vec<usize>,
+    all_lasers_remain_on_board: bool,
+}
+
+impl Default for Checker {
+    fn default() -> Self {
+        let grid: SolverNode = Default::default();
+        let active_lasers: [Option<ActiveLaser>; 4] = Default::default();
+        let laser_visited: [[bool; 4]; 25] = Default::default();
+        let unoriented_occupied_cells: Vec<usize> = Default::default();
+        let all_lasers_remain_on_board = true;
+        
+        Self {
+            grid,
+            active_lasers,
+            laser_visited,
+            unoriented_occupied_cells,
+            all_lasers_remain_on_board,
+        }
+    }
 }
 
 impl Checker {
@@ -23,6 +42,7 @@ impl Checker {
                 // if the laser is still on the board after going to the next position, check for
                 // a token. if there's a token, do the interactions.
                 // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
+                // TODO check for laser out of bounds as a fail position
                 if let Some(next_laser_position) = laser.next_position() {
                     if let Some(token) = &mut self.grid.cells[next_laser_position] {
                         // check for unoriented token; if we hit an unoriented token, terminate this laser and save the index
@@ -76,6 +96,8 @@ impl Checker {
                         });
                         new_laser_index += 1;
                     }
+                } else {
+                    self.all_lasers_remain_on_board = false;
                 }
             }
             self.active_lasers = new_lasers;
@@ -164,6 +186,7 @@ impl Checker {
         self.grid.targets == self.count_lit_targets()
             && self.all_required_targets_lit()
             && self.all_tokens_lit()
+            && self.all_lasers_remain_on_board
     }
 
     fn count_lit_targets(&self) -> u8 {
