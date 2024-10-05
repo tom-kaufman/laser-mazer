@@ -19,7 +19,7 @@ impl Default for Checker {
         let laser_visited: [[bool; 4]; 25] = Default::default();
         let unoriented_occupied_cells: Vec<usize> = Default::default();
         let all_lasers_remain_on_board = true;
-        
+
         Self {
             grid,
             active_lasers,
@@ -106,6 +106,12 @@ impl Checker {
         self
     }
 
+    fn remaining_tokens_to_be_added(&self) -> bool {
+        // Does the associated SolverNode have any tokens that still need to be placed on the grid?
+        (!self.grid.tokens_to_be_added.is_empty())
+            || (!self.grid.tokens_to_be_added_shuffled.is_empty())
+    }
+
     pub fn generate_branches(mut self) -> Result<[Option<Token>; 25], Vec<SolverNode>> {
         // - march the laser forward until no active lasers
         // - if a laser visits an unoriented token: record the index and terminate that active laser
@@ -187,6 +193,7 @@ impl Checker {
             && self.all_required_targets_lit()
             && self.all_tokens_lit()
             && self.all_lasers_remain_on_board
+            && !self.remaining_tokens_to_be_added()
     }
 
     fn count_lit_targets(&self) -> u8 {
@@ -250,5 +257,88 @@ impl Checker {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::solver::orientation::{self, Orientation};
+
+    #[test]
+    fn test_solver_puzzle_62_debug() {
+        // The solver is struggling on Bonus Challenge 2, because the puzzle is "Completed"
+        // before placing the last BeamSplitter
+
+        // This is the last node before the solver claims it's "done". The puzzle is "solved" (2 targets
+        // light, no lasers go off board), but there is still a remaining token to be added!
+        let node = SolverNode {
+            cells: [
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::North),
+                    false,
+                )),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(Token::new(TokenType::Laser, Some(Orientation::East), false)),
+                None,
+                Some(Token::new(
+                    TokenType::BeamSplitter,
+                    Some(Orientation::East),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::DoubleMirror,
+                    Some(Orientation::East),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::West),
+                    false,
+                )),
+                None,
+                Some(Token::new(
+                    TokenType::Checkpoint,
+                    Some(Orientation::East),
+                    false,
+                )),
+                None,
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::North),
+                    false,
+                )),
+                None,
+                None,
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::East),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::North),
+                    false,
+                )),
+                None,
+            ],
+            tokens_to_be_added: vec![],
+            tokens_to_be_added_shuffled: vec![Token::new(TokenType::BeamSplitter, None, false)],
+            targets: 2,
+        };
+        let checker = node.check();
+        println!("Checker after running node.check():\n{:?}\n---", checker);
+        assert!(checker.remaining_tokens_to_be_added());
+        assert!(!checker.solved());
     }
 }
