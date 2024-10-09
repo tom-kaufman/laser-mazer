@@ -1,6 +1,6 @@
 use crate::solver::solver_node::active_laser::ActiveLaser;
 use crate::solver::solver_node::{SolverNode, SPIRAL_ORDER_REVERSE};
-use crate::solver::token::{Token, TokenType};
+use crate::solver::token::{LaserTokenInteractionResult, Token, TokenType};
 
 #[derive(Clone, Debug)]
 pub struct Checker {
@@ -42,7 +42,6 @@ impl Checker {
                 // if the laser is still on the board after going to the next position, check for
                 // a token. if there's a token, do the interactions.
                 // panics if more than 3 active lasers. if this happens it's either an invalid puzzle or programming error..
-                // TODO check for laser out of bounds as a fail position
                 if let Some(next_laser_position) = laser.next_position() {
                     if let Some(token) = &mut self.grid.cells[next_laser_position] {
                         // check for unoriented token; if we hit an unoriented token, terminate this laser and save the index
@@ -56,31 +55,40 @@ impl Checker {
                         for new_laser_direction in token
                             .outbound_lasers_given_inbound_laser_direction(&laser.orientation)
                             .into_iter()
-                            .flatten()
                         {
-                            if self.laser_visited[next_laser_position]
-                                [new_laser_direction.to_index()]
-                            {
-                                continue;
-                            }
-                            self.laser_visited[next_laser_position]
-                                [new_laser_direction.to_index()] = true;
-                            if new_laser_index > 3 {
-                                println!("panic config: {:?}", self);
-                                panic!("laser index > 3!");
-                            }
-                            let new_active_laser = ActiveLaser {
-                                cell_index: next_laser_position,
-                                orientation: new_laser_direction,
-                            };
-                            if !new_lasers
-                                .clone()
-                                .into_iter()
-                                .flatten()
-                                .any(|laser| laser == new_active_laser)
-                            {
-                                new_lasers[new_laser_index] = Some(new_active_laser);
-                                new_laser_index += 1;
+                            match new_laser_direction {
+                                LaserTokenInteractionResult::OutboundLaser(orientation) => {
+                                    if self.laser_visited[next_laser_position]
+                                        [orientation.to_index()]
+                                    {
+                                        continue;
+                                    }
+                                    self.laser_visited[next_laser_position]
+                                        [orientation.to_index()] = true;
+                                    if new_laser_index > 3 {
+                                        println!("panic config: {:?}", self);
+                                        panic!("laser index > 3!");
+                                    }
+                                    let new_active_laser = ActiveLaser {
+                                        cell_index: next_laser_position,
+                                        orientation,
+                                    };
+                                    if !new_lasers
+                                        .clone()
+                                        .into_iter()
+                                        .flatten()
+                                        .any(|laser| laser == new_active_laser)
+                                    {
+                                        new_lasers[new_laser_index] = Some(new_active_laser);
+                                        new_laser_index += 1;
+                                    }
+                                }
+                                LaserTokenInteractionResult::NoOutboundLaser { valid } => {
+                                    match valid {
+                                        true => continue,
+                                        false => self.all_lasers_remain_on_board = false, // TODO this variable name is now misleading
+                                    }
+                                }
                             }
                         }
                     } else {
