@@ -111,42 +111,11 @@ impl LaserMazeSolver {
         Ok(())
     }
 
-    // initialize some things (for now, just sort the pieces to be added heuristically)
-    fn initialize(&mut self) {
-        // sort the tokens to be added
-        // we will get tokens out of the "to be added vec" with pop so we will sort with the
-        // tokens we want to place first at the end of the vec
-        let reference_order = [
-            // CellBlocker is not allowed in to_be_added, but is here for completeness
-            TokenType::CellBlocker,
-            // the last 3 are ordered by gut feel (for now)
-            TokenType::DoubleMirror,
-            TokenType::BeamSplitter,
-            // the first 3 have more heuristics
-            TokenType::Checkpoint,
-            TokenType::TargetMirror,
-            TokenType::Laser,
-        ];
-        let mut new_tokens = vec![];
-
-        for token_type in reference_order {
-            for token in &self.tokens_to_be_added {
-                if token.type_() == &token_type {
-                    new_tokens.push(token.clone());
-                }
-            }
-        }
-
-        self.tokens_to_be_added = new_tokens;
-    }
-
     #[allow(dead_code)]
     pub fn solve(&mut self) -> Result<Option<[Option<Token>; 25]>, String> {
         // Returns Ok(Some(_)) if solution found, Ok(None) if no solution, Err(s) if
         // invalid puzzle provided; s describes why the puzzle is invalid
         self.validate()?;
-
-        self.initialize();
 
         while let Some(mut node) = self.stack.pop() {
             match node.generate_branches() {
