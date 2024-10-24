@@ -634,11 +634,26 @@ mod test {
 
     #[test]
     fn no_laser() {
-        let mut solver = LaserMazeSolver::new(Default::default(), vec![], 1);
+        // Include a TargetMirror in the test so that we get the error about the laser instead
+        let tokens_to_add = vec![Token::new(TokenType::TargetMirror, None, false)];
+        let mut solver = LaserMazeSolver::new(Default::default(), tokens_to_add, 1);
         let result = solver.solve();
         match result {
             Ok(_) => panic!("Test failed, should error"),
             Err(s) => assert_eq!(s, String::from("Invalid piece count for piece type Laser!")),
         }
+    }
+
+    #[test]
+    fn no_target_mirror() {
+        // Include a Laser in the test so that we get the error about the laser instead
+        let tokens_to_add = vec![Token::new(TokenType::Laser, None, false)];
+        let mut solver = LaserMazeSolver::new(Default::default(), tokens_to_add, 1);
+        let result = solver.solve();
+        match result {
+            Ok(_) => panic!("Test failed, should error"),
+            Err(s) => assert_eq!(s, String::from("Invalid piece count for piece type TargetMirror!")),
+        }
+
     }
 }
