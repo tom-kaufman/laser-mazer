@@ -272,7 +272,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -300,7 +300,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -342,7 +342,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -381,7 +381,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -442,7 +442,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -478,7 +478,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -522,7 +522,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -571,7 +571,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -649,7 +649,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 

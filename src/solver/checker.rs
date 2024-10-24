@@ -349,4 +349,54 @@ mod test {
         assert!(checker.remaining_tokens_to_be_added());
         assert!(!checker.solved());
     }
+
+    #[test]
+    fn test_checker_simple() {
+        let node = SolverNode {
+            cells: [
+                Some(Token::new(TokenType::Laser, Some(Orientation::East), false)),
+                Some(Token::new(
+                    TokenType::BeamSplitter,
+                    Some(Orientation::West),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::West),
+                    false,
+                )),
+                None,
+                None,
+                None,
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::South),
+                    false,
+                )),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ],
+            tokens_to_be_added: vec![],
+            tokens_to_be_added_shuffled: vec![],
+            targets: 2,
+        };
+        let checker = node.check();
+        assert!(checker.solved());
+    }
 }

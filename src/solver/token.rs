@@ -120,9 +120,14 @@ impl Token {
         const NONE_INVALID: R = R::NoOutboundLaser { valid: false };
 
         match self.type_ {
-            // TODO this should depend on if it's the source of the laser..
-            // TokenType::Laser => [R::OutboundLaser(Orientation::North), NONE_VALID],
-            TokenType::Laser => todo!("The laser needs some work"),
+            TokenType::Laser => {
+                match laser_inbound_orientation {
+                    // The laser is shining back into the laser source
+                    Orientation::South => [NONE_VALID, NONE_VALID],
+                    // The laser is returning to the laser token on a wall-side of the laser
+                    _ => [NONE_INVALID, NONE_INVALID],
+                }
+            }
             TokenType::Checkpoint => match laser_inbound_orientation {
                 Orientation::North | Orientation::South => {
                     self.lit = true;
