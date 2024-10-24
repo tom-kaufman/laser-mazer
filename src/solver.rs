@@ -652,8 +652,10 @@ mod test {
         let result = solver.solve();
         match result {
             Ok(_) => panic!("Test failed, should error"),
-            Err(s) => assert_eq!(s, String::from("Invalid piece count for piece type TargetMirror!")),
+            Err(s) => assert_eq!(
+                s,
+                String::from("Invalid piece count for piece type TargetMirror!")
+            ),
         }
-
     }
 }
