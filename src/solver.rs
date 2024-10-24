@@ -111,42 +111,11 @@ impl LaserMazeSolver {
         Ok(())
     }
 
-    // initialize some things (for now, just sort the pieces to be added heuristically)
-    fn initialize(&mut self) {
-        // sort the tokens to be added
-        // we will get tokens out of the "to be added vec" with pop so we will sort with the
-        // tokens we want to place first at the end of the vec
-        let reference_order = [
-            // CellBlocker is not allowed in to_be_added, but is here for completeness
-            TokenType::CellBlocker,
-            // the last 3 are ordered by gut feel (for now)
-            TokenType::DoubleMirror,
-            TokenType::BeamSplitter,
-            // the first 3 have more heuristics
-            TokenType::Checkpoint,
-            TokenType::TargetMirror,
-            TokenType::Laser,
-        ];
-        let mut new_tokens = vec![];
-
-        for token_type in reference_order {
-            for token in &self.tokens_to_be_added {
-                if token.type_() == &token_type {
-                    new_tokens.push(token.clone());
-                }
-            }
-        }
-
-        self.tokens_to_be_added = new_tokens;
-    }
-
     #[allow(dead_code)]
     pub fn solve(&mut self) -> Result<Option<[Option<Token>; 25]>, String> {
         // Returns Ok(Some(_)) if solution found, Ok(None) if no solution, Err(s) if
         // invalid puzzle provided; s describes why the puzzle is invalid
         self.validate()?;
-
-        self.initialize();
 
         while let Some(mut node) = self.stack.pop() {
             match node.generate_branches() {
@@ -272,7 +241,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -300,7 +269,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -342,7 +311,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -381,7 +350,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -442,7 +411,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -478,7 +447,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -522,7 +491,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -571,8 +540,46 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
+    }
+
+    #[test]
+    fn test_solver_puzzle_62() {
+        // Bonus Challenge 2
+        let mut cells: [Option<Token>; 25] = Default::default();
+        cells[0] = Some(Token::new(TokenType::TargetMirror, None, false));
+        cells[11] = Some(Token::new(TokenType::Laser, None, false));
+        cells[14] = Some(Token::new(TokenType::DoubleMirror, None, false));
+        cells[17] = Some(Token::new(
+            TokenType::Checkpoint,
+            Some(Orientation::East),
+            false,
+        ));
+        cells[22] = Some(Token::new(TokenType::TargetMirror, None, false));
+
+        let mut tokens_to_be_added = vec![];
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::TargetMirror, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+        tokens_to_be_added.push(Token::new(TokenType::BeamSplitter, None, false));
+
+        let mut solver = LaserMazeSolver::new(cells, tokens_to_be_added, 2);
+
+        let t0 = time::Instant::now();
+        let result = solver.solve();
+        let t1 = time::Instant::now();
+
+        let solution = result.unwrap().unwrap();
+        println!("{:?}", solution);
+        println!("Processed in {:?}", t1 - t0);
+
+        let split_1 = solution[13].clone().unwrap();
+        let split_2 = solution[18].clone().unwrap();
+
+        assert_eq!(split_1.type_(), &TokenType::BeamSplitter);
+        assert_eq!(split_2.type_(), &TokenType::BeamSplitter);
     }
 
     // bonus 99
@@ -611,7 +618,7 @@ mod test {
         let result = solver.solve();
         let t1 = time::Instant::now();
 
-        println!("{:?}", result.unwrap());
+        println!("{:?}", result.unwrap().unwrap());
         println!("Processed in {:?}", t1 - t0);
     }
 
@@ -627,11 +634,28 @@ mod test {
 
     #[test]
     fn no_laser() {
-        let mut solver = LaserMazeSolver::new(Default::default(), vec![], 1);
+        // Include a TargetMirror in the test so that we get the error about the laser instead
+        let tokens_to_add = vec![Token::new(TokenType::TargetMirror, None, false)];
+        let mut solver = LaserMazeSolver::new(Default::default(), tokens_to_add, 1);
         let result = solver.solve();
         match result {
             Ok(_) => panic!("Test failed, should error"),
             Err(s) => assert_eq!(s, String::from("Invalid piece count for piece type Laser!")),
+        }
+    }
+
+    #[test]
+    fn no_target_mirror() {
+        // Include a Laser in the test so that we get the error about the laser instead
+        let tokens_to_add = vec![Token::new(TokenType::Laser, None, false)];
+        let mut solver = LaserMazeSolver::new(Default::default(), tokens_to_add, 1);
+        let result = solver.solve();
+        match result {
+            Ok(_) => panic!("Test failed, should error"),
+            Err(s) => assert_eq!(
+                s,
+                String::from("Invalid piece count for piece type TargetMirror!")
+            ),
         }
     }
 }

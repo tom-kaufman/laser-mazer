@@ -469,6 +469,24 @@ impl SolverNode {
         let checker = self.clone_to_checker();
         checker.check()
     }
+
+    // Count all tokens of a certain type associated with the solver node
+    #[allow(unused)]
+    pub fn count_tokens(&self, type_: TokenType) -> usize {
+        let mut count = self.cells.iter().flatten().fold(0, |acc, token| {
+            acc + if token.type_() == &type_ { 1 } else { 0 }
+        });
+        count += self.tokens_to_be_added.iter().fold(0, |acc, token| {
+            acc + if token.type_() == &type_ { 1 } else { 0 }
+        });
+        count += self
+            .tokens_to_be_added_shuffled
+            .iter()
+            .fold(0, |acc, token| {
+                acc + if token.type_() == &type_ { 1 } else { 0 }
+            });
+        count
+    }
 }
 
 lazy_static! {

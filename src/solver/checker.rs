@@ -1,14 +1,33 @@
 use crate::solver::solver_node::active_laser::ActiveLaser;
 use crate::solver::solver_node::{SolverNode, SPIRAL_ORDER_REVERSE};
-use crate::solver::token::{Token, TokenType};
+use crate::solver::token::{LaserTokenInteractionResult, Token, TokenType};
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug)]
 pub struct Checker {
     grid: SolverNode,
     // there can be 4 active lasers if 2 perpindicular lasers hit the same beam splitter
     active_lasers: [Option<ActiveLaser>; 4],
     laser_visited: [[bool; 4]; 25],
     unoriented_occupied_cells: Vec<usize>,
+    all_lasers_remain_on_board: bool,
+}
+
+impl Default for Checker {
+    fn default() -> Self {
+        let grid: SolverNode = Default::default();
+        let active_lasers: [Option<ActiveLaser>; 4] = Default::default();
+        let laser_visited: [[bool; 4]; 25] = Default::default();
+        let unoriented_occupied_cells: Vec<usize> = Default::default();
+        let all_lasers_remain_on_board = true;
+
+        Self {
+            grid,
+            active_lasers,
+            laser_visited,
+            unoriented_occupied_cells,
+            all_lasers_remain_on_board,
+        }
+    }
 }
 
 impl Checker {
@@ -36,31 +55,40 @@ impl Checker {
                         for new_laser_direction in token
                             .outbound_lasers_given_inbound_laser_direction(&laser.orientation)
                             .into_iter()
-                            .flatten()
                         {
-                            if self.laser_visited[next_laser_position]
-                                [new_laser_direction.to_index()]
-                            {
-                                continue;
-                            }
-                            self.laser_visited[next_laser_position]
-                                [new_laser_direction.to_index()] = true;
-                            if new_laser_index > 3 {
-                                println!("panic config: {:?}", self);
-                                panic!("laser index > 3!");
-                            }
-                            let new_active_laser = ActiveLaser {
-                                cell_index: next_laser_position,
-                                orientation: new_laser_direction,
-                            };
-                            if !new_lasers
-                                .clone()
-                                .into_iter()
-                                .flatten()
-                                .any(|laser| laser == new_active_laser)
-                            {
-                                new_lasers[new_laser_index] = Some(new_active_laser);
-                                new_laser_index += 1;
+                            match new_laser_direction {
+                                LaserTokenInteractionResult::OutboundLaser(orientation) => {
+                                    if self.laser_visited[next_laser_position]
+                                        [orientation.to_index()]
+                                    {
+                                        continue;
+                                    }
+                                    self.laser_visited[next_laser_position]
+                                        [orientation.to_index()] = true;
+                                    if new_laser_index > 3 {
+                                        println!("panic config: {:?}", self);
+                                        panic!("laser index > 3!");
+                                    }
+                                    let new_active_laser = ActiveLaser {
+                                        cell_index: next_laser_position,
+                                        orientation,
+                                    };
+                                    if !new_lasers
+                                        .clone()
+                                        .into_iter()
+                                        .flatten()
+                                        .any(|laser| laser == new_active_laser)
+                                    {
+                                        new_lasers[new_laser_index] = Some(new_active_laser);
+                                        new_laser_index += 1;
+                                    }
+                                }
+                                LaserTokenInteractionResult::NoOutboundLaser { valid } => {
+                                    match valid {
+                                        true => continue,
+                                        false => self.all_lasers_remain_on_board = false, // TODO this variable name is now misleading
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -76,12 +104,20 @@ impl Checker {
                         });
                         new_laser_index += 1;
                     }
+                } else {
+                    self.all_lasers_remain_on_board = false;
                 }
             }
             self.active_lasers = new_lasers;
         }
 
         self
+    }
+
+    fn remaining_tokens_to_be_added(&self) -> bool {
+        // Does the associated SolverNode have any tokens that still need to be placed on the grid?
+        (!self.grid.tokens_to_be_added.is_empty())
+            || (!self.grid.tokens_to_be_added_shuffled.is_empty())
     }
 
     pub fn generate_branches(mut self) -> Result<[Option<Token>; 25], Vec<SolverNode>> {
@@ -164,6 +200,8 @@ impl Checker {
         self.grid.targets == self.count_lit_targets()
             && self.all_required_targets_lit()
             && self.all_tokens_lit()
+            && self.all_lasers_remain_on_board
+            && !self.remaining_tokens_to_be_added()
     }
 
     fn count_lit_targets(&self) -> u8 {
@@ -227,5 +265,138 @@ impl Checker {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::solver::orientation::{self, Orientation};
+
+    #[test]
+    fn test_solver_puzzle_62_debug() {
+        // The solver is struggling on Bonus Challenge 2, because the puzzle is "Completed"
+        // before placing the last BeamSplitter
+
+        // This is the last node before the solver claims it's "done". The puzzle is "solved" (2 targets
+        // light, no lasers go off board), but there is still a remaining token to be added!
+        let node = SolverNode {
+            cells: [
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::North),
+                    false,
+                )),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                Some(Token::new(TokenType::Laser, Some(Orientation::East), false)),
+                None,
+                Some(Token::new(
+                    TokenType::BeamSplitter,
+                    Some(Orientation::East),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::DoubleMirror,
+                    Some(Orientation::East),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::West),
+                    false,
+                )),
+                None,
+                Some(Token::new(
+                    TokenType::Checkpoint,
+                    Some(Orientation::East),
+                    false,
+                )),
+                None,
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::North),
+                    false,
+                )),
+                None,
+                None,
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::East),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::North),
+                    false,
+                )),
+                None,
+            ],
+            tokens_to_be_added: vec![],
+            tokens_to_be_added_shuffled: vec![Token::new(TokenType::BeamSplitter, None, false)],
+            targets: 2,
+        };
+        let checker = node.check();
+        println!("Checker after running node.check():\n{:?}\n---", checker);
+        assert!(checker.remaining_tokens_to_be_added());
+        assert!(!checker.solved());
+    }
+
+    #[test]
+    fn test_checker_simple() {
+        let node = SolverNode {
+            cells: [
+                Some(Token::new(TokenType::Laser, Some(Orientation::East), false)),
+                Some(Token::new(
+                    TokenType::BeamSplitter,
+                    Some(Orientation::West),
+                    false,
+                )),
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::West),
+                    false,
+                )),
+                None,
+                None,
+                None,
+                Some(Token::new(
+                    TokenType::TargetMirror,
+                    Some(Orientation::South),
+                    false,
+                )),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            ],
+            tokens_to_be_added: vec![],
+            tokens_to_be_added_shuffled: vec![],
+            targets: 2,
+        };
+        let checker = node.check();
+        assert!(checker.solved());
     }
 }
